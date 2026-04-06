@@ -452,6 +452,15 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // API: Categories
+    if (req.url.startsWith('/api/categories') && req.method === 'GET') {
+        const result = await dbRequest('find', 'categories');
+        setJSON();
+        const categoriesArray = (result.documents || []).map(c => c.name || c);
+        res.end(JSON.stringify(categoriesArray.length ? categoriesArray : ['Erkaklar', 'Ayollar', 'Uniseks']));
+        return;
+    }
+
     // Static Files Handling
     const PUBLIC_DIR = path.join(__dirname, '..');
     const mimeTypes = {
