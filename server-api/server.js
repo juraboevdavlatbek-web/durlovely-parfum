@@ -31,13 +31,22 @@ const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 const DATABASE_NAME = 'durlovely';
 let client;
+let db;
 
 async function getDb() {
-    if (!client) {
-        client = new MongoClient(MONGODB_URI);
-        await client.connect();
+    if (!MONGODB_URI) return null;
+    if (!db) {
+        try {
+            client = new MongoClient(MONGODB_URI);
+            await client.connect();
+            db = client.db(DATABASE_NAME);
+            console.log("✅ Successfully connected to MongoDB Atlas");
+        } catch (error) {
+            console.error("❌ MongoDB Connection Error:", error);
+            db = null;
+        }
     }
-    return client.db(DATABASE_NAME);
+    return db;
 }
 
 async function dbRequest(action, collectionName, body = {}) {
@@ -45,8 +54,10 @@ async function dbRequest(action, collectionName, body = {}) {
         return localDbFallback(action, collectionName, body);
     }
     try {
-        const db = await getDb();
-        const collection = db.collection(collectionName);
+        const database = await getDb();
+        if (!database) throw new Error("Database not connected");
+        
+        const collection = database.collection(collectionName);
         if (action === 'find') {
             const docs = await collection.find(body.filter || {}).toArray();
             return { documents: docs };
