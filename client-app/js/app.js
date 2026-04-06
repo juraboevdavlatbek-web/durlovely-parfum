@@ -801,8 +801,10 @@ window.playAudio = function(id) {
 
 function renderProductCard(p) {
     const isVip = localStorage.getItem('durlovely_vip_status') === 'true';
-    const displayPrice = isVip ? (p.vip_price || p.price) : p.price;
-    const formattedPrice = Number(displayPrice).toLocaleString();
+    const cleanPrice = (val) => parseInt(String(val || 0).replace(/[^\d]/g, '')) || 0;
+    
+    const displayPrice = isVip ? (cleanPrice(p.vip_price || p.price)) : cleanPrice(p.price);
+    const formattedPrice = displayPrice.toLocaleString();
     const productImg = p.image || p.img || '../shared-assets/assets/images/logo.png';
 
     return `
@@ -833,27 +835,15 @@ window.showProductDetail = function(id) {
     const p = allProducts.find(x => x.id === id);
     if (!p) return;
 
+    const isVip = localStorage.getItem('durlovely_vip_status') === 'true';
+    const displayPrice = isVip ? (p.vip_price || p.price) : p.price;
+    const formattedPrice = Number(displayPrice).toLocaleString();
+    const formattedOldPrice = Number(p.price).toLocaleString();
+    const productImg = p.image || p.img || '../shared-assets/assets/images/logo.png';
+
     const detailPage = `
         <div class="animate-fluid" style="padding-bottom: 120px;">
-            <div style="position: relative; height: 400px;">
-                <img src="${p.img}" style="width: 100%; height: 100%; object-fit: cover;">
-                <button onclick="navigate('catalog')" style="position: absolute; top: 20px; left: 20px; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.5); border: none; color: #fff; display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <div style="position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px;">
-                    ${p.audio ? `<button onclick="playAudio(${p.id})" style="width: 50px; height: 50px; border-radius: 50%; background: var(--accent); color: #fff; border: none; font-size: 20px;"><i class="fa-solid fa-volume-high"></i></button>` : ''}
-                </div>
-            </div>
-            
-            <div style="padding: 30px 20px; background: var(--background); margin-top: -30px; border-radius: 30px 30px 0 0; position: relative; z-index: 2;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <h2 class="luxury-text gold-text" style="font-size: 2.2rem;">${p.name}</h2>
-                        <p style="color: #888; font-size: 14px; margin-top: 5px;">${p.type} • ${p.gender}</p>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 30px;">
+            <div style="position: relative; height: 400px; overflow: hidden; border-radius: 0 0 40px 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
                 <button onclick="navigate('catalog')" style="position: absolute; top: 20px; left: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; color: #fff; border: 1px solid rgba(255,255,255,0.1); z-index: 10; font-size: 16px;">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
@@ -874,7 +864,7 @@ window.showProductDetail = function(id) {
                 </div>
 
                 <p style="font-weight: 300; line-height: 1.8; color: #888; font-size: 15px; margin-bottom: 35px;">
-                    ${p.desc || "Ushbu premium ifor sizga o'zgacha dabdaba va ishonch tuyg'usini taqdim etadi. Tabiiy ingredientlardan tayyorlangan bo'lib, uzoq muddat davomida o'z tarovatini yo'qotmaydi."}
+                    ${p.description || p.desc || "Ushbu premium ifor sizga o'zgacha dabdaba va ishonch tuyg'usini taqdim etadi. Tabiiy ingredientlardan tayyorlangan bo'lib, uzoq muddat davomida o'z tarovatini yo'qotmaydi."}
                 </p>
 
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding: 25px; border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);">
@@ -887,14 +877,13 @@ window.showProductDetail = function(id) {
                         <span style="display: block; font-size: 10px; color: var(--accent); text-transform: uppercase;">VIP Klub</span>
                         <span class="gold-text" style="font-size: 18px; font-weight: 700;">${Number(p.vip_price || p.price * 0.8).toLocaleString()}</span>
                     </div>
-                </div></div>
                 </div>
-                
-                <div style="margin-top: 50px; display: flex; gap: 15px;">
+
+                <div style="display: flex; gap: 15px;">
                     <button class="liquid-glass" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px;" onclick="toggleLike(${p.id})">
-                        <i class="fa-regular fa-heart"></i>
+                        <i class="fa-${isLiked(p.id) ? 'solid' : 'regular'} fa-heart" style="${isLiked(p.id) ? 'color: #ef4444;' : ''}"></i>
                     </button>
-                    <button class="btn-primary" style="flex: 1; height: 60px; font-size: 15px;" onclick="addToCart(${p.id})">SAVATCHAGA QO'SHISH</button>
+                    <button class="btn-primary" style="flex: 1; height: 60px; font-size: 15px; border-radius: 20px;" onclick="addToCart(${p.id})">SAVATCHAGA QO'SHISH</button>
                 </div>
             </div>
         </div>
