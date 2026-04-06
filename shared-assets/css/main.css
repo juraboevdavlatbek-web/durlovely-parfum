@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,700;1,400&family=Jost:wght@300;400;500;600;700&family=Cormorant:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* UI/UX Pro Max - Premium Palette */
+    --primary: #1C1917;
+    --on-primary: #FFFFFF;
+    --secondary: #44403C;
+    --accent: #A16207;
+    --background: #0C0A09;
+    --foreground: #FAFAF9;
+    --muted: rgba(232, 236, 240, 0.1);
+    --border: rgba(214, 211, 209, 0.2);
+    
+    /* Spacing Tokens */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    
+    /* Animation & Transitions */
+    --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-liquid: 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Effects */
+    --glass-bg: rgba(28, 25, 23, 0.7);
+    --glass-blur: blur(12px);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Jost', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .luxury-text {
+    font-family: 'Bodoni Moda', serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Liquid Glass Elements */
+.liquid-glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: var(--transition-smooth);
+}
+
+.liquid-glass:hover {
+    border-color: rgba(161, 98, 7, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Gold Text Gradient - Ultra Premium */
+.gold-text {
+    background: linear-gradient(135deg, #A16207 0%, #EAB308 25%, #FFF7ED 50%, #EAB308 75%, #A16207 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: goldShimmer 4s linear infinite;
+}
+
+@keyframes goldShimmer {
+    to { background-position: 200% center; }
+}
+
+/* Shimmer Effect for Loading/Cards */
+.shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Premium Primary Button */
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-family: 'Jost', sans-serif;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-primary:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 20px rgba(161, 98, 7, 0.3);
+}
+
+/* Tab Bar - Advanced Design */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(12, 10, 9, 0.85);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding-bottom: var(--tg-content-safe-area-inset-bottom, env(safe-area-inset-bottom));
+    z-index: 1000;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--secondary);
+    font-size: 11px;
+    text-decoration: none;
+    transition: var(--transition-fast);
+    gap: 4px;
+    font-weight: 500;
+}
+
+.nav-item i {
+    font-size: 18px;
+}
+
+.nav-item.active {
+    color: var(--accent);
+}
+
+/* Animations */
+@keyframes fluidEntrance {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-fluid {
+    animation: fluidEntrance 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Utility - Cursor Pointer */
+button, a, .clickable {
+    cursor: pointer;
+}

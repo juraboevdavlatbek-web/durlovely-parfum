@@ -1,0 +1,12 @@
+{
+  "name": "durlovely-parfum",
+  "version": "1.0.0",
+  "description": "DURLOVELY PARFUM - Premium Telegram Mini App Backend",
+  "main": "server-api/server.js",
+  "scripts": {
+    "start": "node server-api/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

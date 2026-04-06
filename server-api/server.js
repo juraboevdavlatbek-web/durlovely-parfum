@@ -1,0 +1,383 @@
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+const BOT_TOKEN = '8060468556:AAFdv3dQ7kL-9BrAlx0HjFWfj4H9fIDFAeE';
+const ADMIN_CHAT_ID = 'YOUR_ADMIN_CHAT_ID'; // Will configure later
+
+// Telegram Helper
+function sendTelegramMessage(chatId, text) {
+    if (!chatId) return;
+    const body = JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' });
+    const options = {
+        hostname: 'api.telegram.org',
+        port: 443,
+        path: `/bot${BOT_TOKEN}/sendMessage`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body)
+        }
+    };
+    const req = https.request(options, () => {});
+    req.on('error', (e) => console.error("Telegram API Error:", e));
+    req.write(body);
+    req.end();
+}
+
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = path.join(__dirname, 'data.json');
+const PUBLIC_DIR = path.join(__dirname, '..');
+
+// Helper to read data
+const readData = () => {
+    try {
+        const data = fs.readFileSync(DATA_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (e) {
+        return { orders: [], products: [], categories: [], customers: [] };
+    }
+};
+
+// Helper to write data
+const writeData = (data) => {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+};
+
+const server = http.createServer((req, res) => {
+    // CORS sets
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('X-Pinggy-No-Screen', 'true');
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    const setJSON = () => res.setHeader('Content-Type', 'application/json');
+
+    // Telegram Bot Webhook - handles /start command and contact sharing
+    if (req.url === '/bot/webhook' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const update = JSON.parse(body);
+            const message = update.message;
+            if (!message) { res.end('ok'); return; }
+            
+            const chatId = message.chat.id;
+            
+            // /start command - ask for contact
+            if (message.text === '/start') {
+                const welcomeBody = JSON.stringify({
+                    chat_id: chatId,
+                    text: `<b>DURLOVELY PARFUM</b> ga xush kelibsiz! ✨\n\n🌹 Premium va original iforlar olamiga kirish uchun raqamingizni ulashing:`,
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        keyboard: [[{ text: '📱 Raqamni ulashish', request_contact: true }]],
+                        resize_keyboard: true,
+                        one_time_keyboard: true
+                    }
+                });
+                const opts = {
+                    hostname: 'api.telegram.org', port: 443, method: 'POST',
+                    path: `/bot${BOT_TOKEN}/sendMessage`,
+                    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(welcomeBody) }
+                };
+                const tgReq = https.request(opts);
+                tgReq.write(welcomeBody); tgReq.end();
+            }
+            
+            // User shared contact
+            if (message.contact) {
+                const contact = message.contact;
+                let phone = contact.phone_number || '';
+                if (!phone.startsWith('+')) phone = '+' + phone;
+                
+                if (!phone.startsWith('+998')) {
+                    sendTelegramMessage(chatId, "❌ Kechirasiz, faqat O'zbekiston (+998) raqamlari qabul qilinadi. Iltimos bayroqni bosib o'zbek raqamingizni tanlang.");
+                    res.end('ok'); return;
+                }
+                
+                const data = readData();
+                if (!data.customers) data.customers = [];
+                let existing = data.customers.find(c => c.phone === phone);
+                if (!existing) {
+                    existing = {
+                        id: Date.now(), phone, tgId: chatId,
+                        firstName: contact.first_name || '',
+                        dateJoined: new Date().toLocaleDateString()
+                    };
+                    data.customers.push(existing);
+                    writeData(data);
+                    sendTelegramMessage(chatId, `✅ <b>Raqamingiz tasdiqlandi!</b>\n\n<b>${phone}</b> raqami bizning bazamizga kiritildi.\n\nEndi ilovamizni ochib xarid qiling! 🛍`, );
+                } else {
+                    sendTelegramMessage(chatId, `👋 Siz allaqachon ro'yxatdan o'tgansiz!\n\n<b>${phone}</b> raqami bizda mavjud. Ilovamizni ochib davom eting! 🛍`);
+                }
+                
+                // Remove keyboard
+                const removeBody = JSON.stringify({ chat_id: chatId, text: '🛒 Ilovani oching va xarid qiling!', reply_markup: { remove_keyboard: true } });
+                const opts2 = {
+                    hostname: 'api.telegram.org', port: 443, method: 'POST',
+                    path: `/bot${BOT_TOKEN}/sendMessage`,
+                    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(removeBody) }
+                };
+                const tgReq2 = https.request(opts2);
+                tgReq2.write(removeBody); tgReq2.end();
+            }
+            
+            res.end('ok');
+        });
+        return;
+    }
+
+
+    if (req.url === '/api/orders' && req.method === 'GET') {
+        const data = readData();
+        setJSON();
+        res.end(JSON.stringify(data.orders));
+        return;
+    }
+
+    if (req.url === '/api/orders' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const order = JSON.parse(body);
+            const data = readData();
+            order.id = 1000 + data.orders.length + 1; // Simple ID
+            order.date = new Date().toLocaleDateString();
+            order.status = 'pending';
+            data.orders.push(order);
+            writeData(data);
+            
+            // Notify customer
+            if (order.tgId) {
+                const msg = `<b>DURLOVELY PARFUM</b>\n\n🛍 <b>Yangi buyurtmangiz qabul qilindi!</b>\nBuyurtma raqami: #${order.id}\nJami summa: <b>${order.total.toLocaleString()} so'm</b>\n\nTez orada menejer siz bilan aloqaga chiqadi. Xaridingiz uchun rahmat! ✨`;
+                sendTelegramMessage(order.tgId, msg);
+            }
+
+            setJSON();
+            res.end(JSON.stringify({ success: true, order }));
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/api/orders/') && req.method === 'POST') {
+        const id = req.url.split('/')[3];
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const { status } = JSON.parse(body);
+            const data = readData();
+            const orderIndex = data.orders.findIndex(o => o.id == id);
+            if (orderIndex !== -1) {
+                data.orders[orderIndex].status = status;
+                writeData(data);
+                setJSON();
+                res.end(JSON.stringify({ success: true, order: data.orders[orderIndex] }));
+            } else {
+                res.writeHead(404);
+                res.end('Not Found');
+            }
+        });
+        return;
+    }
+
+    // API: Products
+    if (req.url === '/api/products' && (req.method === 'GET')) {
+        const data = readData();
+        setJSON();
+        res.end(JSON.stringify(data.products));
+        return;
+    }
+
+    if (req.url === '/api/products' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const product = JSON.parse(body);
+            const data = readData();
+            product.id = Date.now(); // Simple ID generation
+            data.products.push(product);
+            writeData(data);
+            setJSON();
+            res.end(JSON.stringify({ success: true, product }));
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/api/products/') && (req.method === 'PUT' || req.method === 'POST' && req.url.includes('update'))) {
+        // Support both PUT and POST for simplicity in some client environments
+        const id = req.url.split('/')[3];
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const updatedProduct = JSON.parse(body);
+            const data = readData();
+            const index = data.products.findIndex(p => p.id == id);
+            if (index !== -1) {
+                data.products[index] = { ...data.products[index], ...updatedProduct };
+                writeData(data);
+                setJSON();
+                res.end(JSON.stringify({ success: true, product: data.products[index] }));
+            } else {
+                res.writeHead(404);
+                res.end('Not Found');
+            }
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/api/products/') && req.method === 'DELETE') {
+        const id = req.url.split('/')[3];
+        const data = readData();
+        const initialLength = data.products.length;
+        data.products = data.products.filter(p => p.id != id);
+        if (data.products.length < initialLength) {
+            writeData(data);
+            setJSON();
+            res.end(JSON.stringify({ success: true }));
+        } else {
+            res.writeHead(404);
+            res.end('Not Found');
+        }
+        return;
+    }
+
+    // API: Categories (derived from products for now, or separate list)
+    if (req.url === '/api/categories' && req.method === 'GET') {
+        const data = readData();
+        // If categories doesn't exist, create from products
+        const categories = data.categories || [...new Set(data.products.map(p => p.category))];
+        setJSON();
+        res.end(JSON.stringify(categories));
+        return;
+    }
+
+    // API: Customers - Check by tgId
+    if (req.url.startsWith('/api/customers/check/') && req.method === 'GET') {
+        const tgId = parseInt(req.url.split('/').pop());
+        const data = readData();
+        const customer = (data.customers || []).find(c => c.tgId === tgId);
+        setJSON();
+        if (customer) {
+            res.end(JSON.stringify({ found: true, customer }));
+        } else {
+            res.end(JSON.stringify({ found: false }));
+        }
+        return;
+    }
+
+    // API: Customers - List all
+    if (req.url === '/api/customers' && req.method === 'GET') {
+        const data = readData();
+        setJSON();
+        res.end(JSON.stringify(data.customers || []));
+        return;
+    }
+
+    // API: Customers - Toggle VIP
+    if (req.url.match(/^\/api\/customers\/\d+\/vip$/) && req.method === 'POST') {
+        const id = parseInt(req.url.split('/')[3]);
+        const data = readData();
+        const customer = (data.customers || []).find(c => c.id === id);
+        if (customer) {
+            customer.isVip = !customer.isVip;
+            writeData(data);
+            
+            // Notify customer via Telegram
+            if (customer.tgId) {
+                if (customer.isVip) {
+                    sendTelegramMessage(customer.tgId, `👑 <b>Tabriklaymiz!</b>\n\nSiz endi <b>DURLOVELY VIP</b> a'zosisiz!\nMaxsus chegirmalar va eksklyuziv xizmatlardan foydalanishingiz mumkin. ✨`);
+                } else {
+                    sendTelegramMessage(customer.tgId, `ℹ️ Sizning VIP a'zoligingiz bekor qilindi.\nBatafsil ma'lumot uchun biz bilan bog'laning.`);
+                }
+            }
+            
+            setJSON();
+            res.end(JSON.stringify({ success: true, customer }));
+        } else {
+            res.writeHead(404);
+            res.end(JSON.stringify({ error: 'Customer not found' }));
+        }
+        return;
+    }
+
+    // API: Customers
+    if (req.url === '/api/customers' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const customer = JSON.parse(body);
+            const data = readData();
+            
+            if (!data.customers) data.customers = [];
+            
+            let existing = data.customers.find(c => c.phone === customer.phone);
+            if (!existing) {
+                customer.id = Date.now();
+                customer.dateJoined = new Date().toLocaleDateString();
+                data.customers.push(customer);
+                writeData(data);
+                existing = customer;
+                
+                // Send Welcome Message
+                if (customer.tgId) {
+                    const msg = `<b>DURLOVELY</b> ga xush kelibsiz! ✨\n\nSizning <b>${customer.phone}</b> raqamingiz muvaffaqiyatli tasdiqlandi.\nAsl va premium iforlar olamidan zavq oling.`;
+                    sendTelegramMessage(customer.tgId, msg);
+                }
+            }
+            
+            setJSON();
+            res.end(JSON.stringify({ success: true, customer: existing }));
+        });
+        return;
+    }
+
+    let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'client-app/index.html' : req.url);
+    
+    if (fs.existsSync(filePath)) {
+        if (fs.statSync(filePath).isDirectory()) {
+            filePath = path.join(filePath, 'index.html');
+        }
+    } else {
+        // Fallback for SPA routing
+        if (req.url.startsWith('/admin-panel')) {
+            filePath = path.join(PUBLIC_DIR, 'admin-panel/index.html');
+        } else {
+            filePath = path.join(PUBLIC_DIR, 'client-app/index.html');
+        }
+    }
+    
+    const extname = path.extname(filePath);
+    const mimeTypes = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+    };
+    const contentType = mimeTypes[extname] || 'application/octet-stream';
+
+    fs.readFile(filePath, (error, content) => {
+        if (error) {
+            res.writeHead(404);
+            res.end('File Not Found');
+        } else {
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(content, 'utf-8');
+        }
+    });
+});
+
+server.listen(PORT, () => {
+    console.log(`Admin Backend (Enhanced) running at http://localhost:${PORT}`);
+});

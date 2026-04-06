@@ -1,0 +1,66 @@
+{
+  "categories": [
+    "Signature",
+    "Gold Collection",
+    "Limited Edition"
+  ],
+  "orders": [
+    {
+      "id": 1001,
+      "customer": "Durdona",
+      "phone": "+998901234567",
+      "items": [
+        "Amber Gold x1"
+      ],
+      "total": "450,000",
+      "status": "pending",
+      "date": "2026-04-04"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Amber Gold",
+      "price": 450000,
+      "vip_price": 380000,
+      "stock": 15,
+      "category": "Gold Collection",
+      "description": "Luxurious amber scents with a touch of gold.",
+      "image": "../shared-assets/assets/images/amber-gold.png"
+    },
+    {
+      "id": 2,
+      "name": "Durlovely Signature",
+      "price": 520000,
+      "vip_price": 440000,
+      "stock": 8,
+      "category": "Signature",
+      "description": "The classic Durlovely essence.",
+      "image": "../shared-assets/assets/images/signature.png"
+    },
+    {
+      "name": "Test Parfum",
+      "price": 100000,
+      "vip_price": 80000,
+      "category": "Test",
+      "stock": 10,
+      "id": 1775389025526
+    }
+  ],
+  "customers": [
+    {
+      "phone": "+998911304031",
+      "tgId": 737113132,
+      "id": 1775394512089,
+      "dateJoined": "4/5/2026",
+      "isVip": true
+    },
+    {
+      "id": 1775396639066,
+      "phone": "+998934304031",
+      "tgId": 7190674062,
+      "firstName": "Damirbe",
+      "dateJoined": "4/5/2026"
+    }
+  ]
+}

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DURLOVELY PARFUM | Luxury Experience</title>
+    <link rel="stylesheet" href="../shared-assets/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+    <!-- 1. Age Gate Screen -->
+    <section id="age-gate" class="screen active">
+        <div class="content animate-fluid">
+            <div class="logo-container">
+                <img src="../shared-assets/assets/images/logo.png" alt="Durlovely Logo" class="main-logo">
+            </div>
+            <h1 class="luxury-text gold-text" style="font-size: 2.2rem; margin-bottom: 5px;">DURLOVELY</h1>
+            <p style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: #a16207; font-weight: 300; letter-spacing: 0.05em; margin-bottom: 30px; text-transform: uppercase;">Sizning jozibangiz siri</p>
+            <h2 class="luxury-text" style="font-size: 1.2rem; font-weight: 300;">Siz 18 yoshdan kattamisiz?</h2>
+            <p style="font-size: 0.9rem; color: #888; margin-top: 10px;">Loyiha faqat kattalar uchun premium mahsulotlarni taqdim etadi.</p>
+            
+            <div class="btns">
+                <button class="btn-primary" onclick="showSecurity()" style="width: 100%; position: relative; justify-content: center;">
+                    <span style="flex: 1; text-align: center;">HA, MEN 18 YOSHDA</span>
+                    <i class="fa-solid fa-chevron-right" style="position: absolute; right: 20px;"></i>
+                </button>
+                <button class="btn-exit" onclick="exitApp()" style="width: 100%;">YO'Q, CHIQISH</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Security (Dur Slider) Screen -->
+    <section id="security" class="screen hide">
+        <div class="content animate-fluid">
+            <h2 class="luxury-text gold-text" style="font-size: 1.8rem;">Oltin Marvarid</h2>
+            <p style="font-weight: 300; font-size: 0.95rem; color: #aaa;">Robot emasligingizni tasdiqlang</p>
+            
+            <div class="slider-container">
+                <div id="slider-target" class="target">
+                    <i class="fa-regular fa-circle-dot"></i>
+                </div>
+                <div id="slider-track" class="track liquid-glass">
+                    <div id="dur-pearl" class="pearl">
+                        <i class="fa-solid fa-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.5 Auth Screen -->
+    <section id="auth-screen" class="screen hide">
+        <div class="content animate-fluid">
+            <h2 class="luxury-text gold-text" style="font-size: 1.8rem;">Kirish</h2>
+            <p style="font-weight: 300; font-size: 0.9rem; color: #aaa; margin-bottom: 30px;">Telefon raqamingiz orqali tasdiqlang</p>
+            
+            <div id="phone-step" class="auth-card liquid-glass">
+                <div class="input-group">
+                    <span class="prefix">+998</span>
+                    <input type="tel" id="phone-input" placeholder="90 123 45 67" maxlength="12">
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-top: 20px;" onclick="verifyPhone()">TASDIQLASH</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.6 Birthday Screen -->
+    <section id="birthday-screen" class="screen hide">
+        <div class="content animate-fluid">
+            <h2 class="luxury-text gold-text" style="font-size: 1.8rem;">Xush Kelibsiz!</h2>
+            <p style="font-weight: 300; font-size: 0.9rem; color: #aaa; margin-bottom: 20px;">Tug'ilgan kuningizni kiriting</p>
+            <p style="font-size: 0.7rem; color: #666; margin-bottom: 30px;">(Bu ma'lumotni o'zgartirib bo'lmaydi)</p>
+
+            <div class="auth-card liquid-glass">
+                <input type="date" id="bday-input" class="date-input">
+                <button class="btn-primary" style="width: 100%; margin-top: 30px;" onclick="saveBirthday()">DAVOM ETTIRISH</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Main App Layout -->
+    <main id="app-main" class="hide">
+        <!-- Render page content here dynamically -->
+        <div id="page-content"></div>
+
+        <!-- Advanced Tab Bar -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="navigate('home')">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" onclick="navigate('catalog')">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Katalog</span>
+            </a>
+            <a href="#" class="nav-item" onclick="navigate('likes')">
+                <i class="fa-solid fa-heart"></i>
+                <span>Tanlanganlar</span>
+            </a>
+            <a href="#" class="nav-item" onclick="navigate('cart')">
+                <div class="cart-icon-wrapper" style="position: relative;">
+                    <i class="fa-solid fa-shopping-bag"></i>
+                </div>
+                <span>Savatcha</span>
+            </a>
+            <a href="#" class="nav-item" onclick="navigate('gift')">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Sovg'a</span>
+            </a>
+            <a href="#" class="nav-item" onclick="navigate('profile')">
+                <i class="fa-solid fa-user-circle"></i>
+                <span>Profil</span>
+            </a>
+        </nav>
+    </main>
+
+    <style>
+        .screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            z-index: 100;
+            background: var(--background);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .screen.hide {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.05);
+        }
+
+        .main-logo {
+            width: 140px;
+            margin-bottom: 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(161, 98, 7, 0.2);
+        }
+
+        .btns {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 50px auto 0;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .btn-exit {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            color: #777;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+        }
+
+        /* Premium Slider */
+        .slider-container {
+            width: 280px;
+            height: 60px;
+            margin: 40px auto 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .slider-track {
+            width: 100%;
+            height: 48px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .pearl {
+            width: 38px;
+            height: 38px;
+            background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
+            border-radius: 50%;
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(161, 98, 7, 0.4), inset -2px -2px 5px rgba(0,0,0,0.3);
+            z-index: 5;
+            transition: transform 0.2s ease;
+        }
+        .pearl:active { cursor: grabbing; transform: scale(0.95); }
+        .pearl i { font-size: 10px; color: rgba(255,255,255,0.5); display: none; }
+
+        .target {
+            position: absolute;
+            right: 8px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px dashed rgba(161, 98, 7, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 20px;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+        
+        .slider-track::before {
+            content: 'SILJITING...';
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 48px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            color: rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+        /* Auth Specific Styles */
+        .auth-card {
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 320px;
+            border-radius: 32px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            transition: border-color 0.3s;
+        }
+        .input-group:focus-within { border-color: var(--accent); }
+        .input-group .prefix { font-weight: 700; color: var(--accent); margin-right: 12px; font-size: 16px; }
+        .input-group input { 
+            background: none; border: none; color: #fff; font-size: 18px; width: 100%; outline: none; font-weight: 500; letter-spacing: 0.05em;
+        }
+
+        .code-input {
+            width: 100%;
+            background: rgba(161,98,7,0.05);
+            border: 2px solid rgba(161,98,7,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            font-size: 28px;
+            text-align: center;
+            letter-spacing: 0.5em;
+            color: var(--accent);
+            font-weight: 800;
+            margin-bottom: 30px;
+            outline: none;
+        }
+
+        .date-input {
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 18px;
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .hide {
+            display: none !important;
+        }
+    </style>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
