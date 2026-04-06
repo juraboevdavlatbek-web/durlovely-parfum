@@ -150,7 +150,12 @@ const server = http.createServer(async (req, res) => {
     // Anti-Sleep Keep-Alive Endpoint
     if (req.url.startsWith('/api/ping') && req.method === 'GET') {
         setJSON();
-        res.end(JSON.stringify({ status: 'AESTHETICALLY_ACTIVE', time: new Date().toISOString() }));
+        res.end(JSON.stringify({ 
+            status: 'AESTHETICALLY_ACTIVE', 
+            time: new Date().toISOString(),
+            cwd: process.cwd(),
+            dirname: __dirname
+        }));
         return;
     }
 
