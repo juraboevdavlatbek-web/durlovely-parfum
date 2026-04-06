@@ -34,9 +34,18 @@ const PUBLIC_DIR = path.join(__dirname, '..');
 const readData = () => {
     try {
         const data = fs.readFileSync(DATA_FILE, 'utf8');
-        return JSON.parse(data);
+        const parsed = JSON.parse(data);
+        if (!parsed.notifications) parsed.notifications = [];
+        // Migration: Ensure customers have dur and durHistory
+        if (parsed.customers) {
+            parsed.customers.forEach(c => {
+                if (c.dur === undefined) c.dur = 0;
+                if (!c.durHistory) c.durHistory = [];
+            });
+        }
+        return parsed;
     } catch (e) {
-        return { orders: [], products: [], categories: [], customers: [] };
+        return { orders: [], products: [], categories: [], customers: [], notifications: [] };
     }
 };
 
@@ -151,6 +160,30 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (req.url.startsWith('/api/notifications') && req.method === 'GET') {
+        const data = readData();
+        setJSON();
+        res.end(JSON.stringify(data.notifications || []));
+        return;
+    }
+
+    if (req.url.startsWith('/api/notifications') && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            const data = readData();
+            const notification = JSON.parse(body);
+            notification.id = Date.now();
+            notification.date = new Date().toLocaleString();
+            if (!data.notifications) data.notifications = [];
+            data.notifications.unshift(notification);
+            writeData(data);
+            setJSON();
+            res.end(JSON.stringify({ success: true, notification }));
+        });
+        return;
+    }
+
     if (req.url.startsWith('/api/debug/data') && req.method === 'GET') {
         setJSON();
         res.end(JSON.stringify(readData()));
@@ -183,6 +216,19 @@ const server = http.createServer((req, res) => {
             order.date = new Date().toLocaleDateString();
             order.status = 'pending';
             data.orders.push(order);
+            // Add Dur bonus to customer
+            const customer = data.customers.find(c => c.phone === order.phone || c.tgId === order.tgId);
+            if (customer) {
+                customer.dur = (customer.dur || 0) + 1;
+                if (!customer.durHistory) customer.durHistory = [];
+                customer.durHistory.unshift({
+                    id: Date.now() + 1,
+                    reason: `#${order.id} buyurtma uchun bonus`,
+                    amount: 1,
+                    date: new Date().toLocaleString()
+                });
+            }
+
             writeData(data);
             
             // Notify customer
@@ -362,7 +408,7 @@ const server = http.createServer((req, res) => {
             customer.isVip = !customer.isVip;
             writeData(data);
             
-            // Notify customer via Telegram
+            // Telegram Notification to Adminer via Telegram
             if (customer.tgId) {
                 if (customer.isVip) {
                     sendTelegramMessage(customer.tgId, `👑 <b>Tabriklaymiz!</b>\n\nSiz endi <b>DURLOVELY VIP</b> a'zosisiz!\nMaxsus chegirmalar va eksklyuziv xizmatlardan foydalanishingiz mumkin. ✨`);

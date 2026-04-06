@@ -29,16 +29,17 @@ const birthdayScreen = document.getElementById('birthday-screen');
 const pages = {
     home: `
         <div class="animate-fluid" style="padding-bottom: 120px;">
-            <!-- Premium Header -->
-            <header style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div class="dur-balance liquid-glass" style="padding: 8px 15px; border-radius: 50px; display: flex; align-items: center; border-color: var(--accent);">
-                    <i class="fa-solid fa-gem" style="color: var(--accent); font-size: 14px;"></i>
-                    <span id="dur-count" style="font-weight: 600; margin-left: 8px; font-size: 14px; color: #fff;">1.2 💎</span>
+            <!-- Premium Header (v3.0) -->
+            <header style="padding: 20px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: rgba(12, 10, 9, 0.8); backdrop-filter: blur(20px); z-index: 100;">
+                <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,0.6); cursor: pointer;">
+                    <i class="fa-solid fa-gem" style="color: #a16207; font-size: 14px;"></i>
+                    <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
+                    <i class="fa-solid fa-gem" style="color: #3b82f6; font-size: 14px;"></i>
                 </div>
-                <div class="luxury-text gold-text" style="font-size: 1.4rem; letter-spacing: 0.1em;">DURLOVELY</div>
-                <div class="notifications" style="font-size: 20px; color: #888; position: relative;">
+                <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
+                <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
                     <i class="fa-regular fa-bell"></i>
-                    <span style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; border: 2px solid var(--background);"></span>
+                    <span id="notif-badge" style="position: absolute; top: 8px; right: 0; width: 8px; height: 8px; background: #a16207; border-radius: 50%; border: 2px solid #0c0a09; display: none;"></span>
                 </div>
             </header>
 
@@ -1035,18 +1036,101 @@ window.submitOrder = async function() {
     }
 };
 
-// Initial Setup
+window.showDurHistory = function() {
+    const userAuth = localStorage.getItem('durlovely_user_auth');
+    if (!userAuth) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    const customer = allCustomers.find(c => c.phone === userAuth || c.tgId == userAuth);
+    const history = (customer && customer.durHistory) ? customer.durHistory : [];
+
+    modal.innerHTML = `
+        <div class="modal-content animate-fluid" style="background: #111; max-height: 70vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h3 class="luxury-text gold-text" style="font-size: 1.6rem;">Dur Tarixi</h3>
+                <i class="fa-solid fa-xmark" onclick="this.closest('.modal-overlay').remove()" style="color: #444; cursor: pointer;"></i>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                ${history.length > 0 ? history.map(h => `
+                    <div class="liquid-glass" style="padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: #fff;">${h.reason}</div>
+                            <div style="font-size: 11px; color: #555; margin-top: 4px;">${h.date}</div>
+                        </div>
+                        <div style="font-weight: 800; color: var(--accent);">+${h.amount} 💎</div>
+                    </div>
+                `).join('') : '<div style="text-align: center; color: #444; padding: 40px;">Sizda hali bonuslar yo\'q</div>'}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+window.showNotifications = function() {
+    fetch(`${API_BASE}/notifications?v=${Date.now()}`)
+        .then(res => res.json())
+        .then(notifs => {
+            const pageContent = document.getElementById('page-content');
+            pageContent.innerHTML = `
+                <div class="animate-fluid" style="padding: 20px; padding-bottom: 120px;">
+                    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 35px;">
+                        <i class="fa-solid fa-arrow-left" onclick="navigate('home')" style="font-size: 20px; color: #fff; cursor: pointer;"></i>
+                        <h2 class="luxury-text gold-text" style="font-size: 2rem;">Xabarlar</h2>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        ${notifs.length > 0 ? notifs.map(n => `
+                            <div class="liquid-glass" style="padding: 20px; border-radius: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <span style="color: var(--accent); font-size: 10px; font-weight: 800; text-transform: uppercase;">Rasmiy</span>
+                                    <span style="color: #444; font-size: 10px;">${n.date}</span>
+                                </div>
+                                <h4 style="color: #fff; font-size: 16px; font-weight: 600; margin-bottom: 8px;">${n.title || 'DURLOVELY Янгилик'}</h4>
+                                <p style="color: #888; font-size: 14px; line-height: 1.6;">${n.text || n.message}</p>
+                            </div>
+                        `).join('') : '<div style="text-align: center; color: #444; padding: 100px 20px;">Hozircha yangi xabarlar yo\'q</div>'}
+                    </div>
+                </div>
+            `;
+            document.getElementById('notif-badge').style.display = 'none';
+        });
+};
+
+let allCustomers = [];
 async function initApp() {
     await fetchProducts();
-    const userAuth = localStorage.getItem('durlovely_user_auth');
     
+    // Fetch customers to update balance/VIP
+    try {
+        const res = await fetch(`${API_BASE}/customers?v=${Date.now()}`);
+        allCustomers = await res.json();
+    } catch(e) {}
+
+    const userAuth = localStorage.getItem('durlovely_user_auth');
     if (userAuth) {
-        // Already logged in locally
-        ageGate.classList.add('hide');
-        securityScreen.classList.add('hide');
-        authScreen.classList.add('hide');
-        birthdayScreen.classList.add('hide');
-        mainApp.classList.remove('hide');
+        const customer = allCustomers.find(c => c.phone === userAuth || c.tgId == userAuth);
+        if (customer) {
+            localStorage.setItem('durlovely_vip_status', customer.isVip ? 'true' : 'false');
+            // Update Dur balance in UI if home is active
+            setTimeout(() => {
+                const durEl = document.getElementById('dur-count');
+                if (durEl) durEl.textContent = (customer.dur || 0).toFixed(1);
+            }, 100);
+        }
+        
+        // Check for new notifications
+        fetch(`${API_BASE}/notifications?v=${Date.now()}`)
+            .then(res => res.json())
+            .then(notifs => {
+                if (notifs.length > 0) {
+                    const badge = document.getElementById('notif-badge');
+                    if (badge) badge.style.display = 'block';
+                }
+            });
+
         navigate('home');
         return;
     }
