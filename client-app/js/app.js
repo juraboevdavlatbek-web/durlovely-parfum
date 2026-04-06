@@ -1100,83 +1100,92 @@ window.showNotifications = function() {
 };
 
 let allCustomers = [];
+
 async function initApp() {
-    await fetchProducts();
+    // 1. SILENT AUTO-LOGIN CHECK (Priority #1)
+    const userAuth = localStorage.getItem('durlovely_user_auth');
+    const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
+
+    if (userAuth || tgUser) {
+        try {
+            let customer = null;
+            if (userAuth) {
+                const res = await fetch(`${API_BASE}/customers/check/phone/${userAuth}`);
+                const result = await res.json();
+                if (result.found) customer = result.customer;
+            } else if (tgUser) {
+                const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}`);
+                const result = await res.json();
+                if (result.found) {
+                    customer = result.customer;
+                    localStorage.setItem('durlovely_user_auth', customer.phone);
+                }
+            }
+
+            if (customer) {
+                hideAllOnboarding();
+                mainApp.classList.remove('hide');
+                localStorage.setItem('durlovely_vip_status', customer.isVip ? 'true' : 'false');
+                
+                await fetchProducts();
+                navigate('home');
+                updateClientContext(customer);
+                return;
+            }
+        } catch(e) {
+            console.error('Auto-login failed:', e);
+        }
+    }
+
+    // 2. DEFAULT ONBOARDING (Priority #2)
+    const userAgeVerified = localStorage.getItem('durlovely_age_verified_v2');
+    if (!userAgeVerified) {
+        showScreen('age-gate');
+    } else {
+        showScreen('security');
+    }
     
-    // Fetch customers to update balance/VIP
+    await fetchProducts();
+}
+
+function hideAllOnboarding() {
+    ['age-gate', 'security', 'auth-screen', 'birthday-screen'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hide');
+            el.classList.remove('active');
+            el.style.display = 'none';
+        }
+    });
+}
+
+function showScreen(id) {
+    hideAllOnboarding();
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('hide');
+        el.classList.add('active');
+        el.style.display = 'flex';
+    }
+}
+
+async function updateClientContext(customer) {
+    const durEl = document.getElementById('dur-count');
+    if (durEl) durEl.textContent = (customer.dur || 0).toFixed(1);
+
     try {
         const res = await fetch(`${API_BASE}/customers?v=${Date.now()}`);
         allCustomers = await res.json();
     } catch(e) {}
 
-    const userAuth = localStorage.getItem('durlovely_user_auth');
-    if (userAuth) {
-        // QUICK HIDE all onboarding screens
-        const onboarding = ['age-gate', 'security', 'auth-screen', 'birthday-screen'];
-        onboarding.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.classList.add('hide');
-                el.classList.remove('active');
-                el.style.display = 'none'; // Force hide
+    fetch(`${API_BASE}/notifications?v=${Date.now()}`)
+        .then(res => res.json())
+        .then(notifs => {
+            if (notifs.length > 0) {
+                const badge = document.getElementById('notif-badge');
+                if (badge) badge.style.display = 'block';
             }
         });
-        if (mainApp) mainApp.classList.remove('hide');
-
-        const customer = allCustomers.find(c => c.phone === userAuth || c.tgId == userAuth);
-        if (customer) {
-            localStorage.setItem('durlovely_vip_status', customer.isVip ? 'true' : 'false');
-            // Update Dur balance in UI if home is active
-            setTimeout(() => {
-                const durEl = document.getElementById('dur-count');
-                if (durEl) durEl.textContent = (customer.dur || 0).toFixed(1);
-            }, 100);
-        }
-        
-        // Check for new notifications
-        fetch(`${API_BASE}/notifications?v=${Date.now()}`)
-            .then(res => res.json())
-            .then(notifs => {
-                if (notifs.length > 0) {
-                    const badge = document.getElementById('notif-badge');
-                    if (badge) badge.style.display = 'block';
-                }
-            });
-
-        navigate('home');
-        return;
-    }
-    
-    // Check if user already registered via bot (by tgId)
-    const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
-    if (tgUser) {
-        try {
-            const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}`);
-            const result = await res.json();
-            if (result.found) {
-                // User already shared contact via bot — auto-login!
-                localStorage.setItem('durlovely_user_auth', result.customer.phone);
-                localStorage.setItem('durlovely_vip_status', result.customer.isVip ? 'true' : 'false');
-                ageGate.classList.add('hide');
-                securityScreen.classList.add('hide');
-                authScreen.classList.add('hide');
-                birthdayScreen.classList.add('hide');
-                mainApp.classList.remove('hide');
-                navigate('home');
-                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                return;
-            }
-        } catch(e) {
-            console.error('Auto-login check failed:', e);
-        }
-    }
-    
-    // Not logged in — show age gate or auth
-    const userAgeVerified = localStorage.getItem('durlovely_age_verified_v2');
-    if (userAgeVerified) {
-        ageGate.classList.add('hide');
-        securityScreen.classList.remove('hide');
-    }
 }
 
 initApp();

@@ -377,8 +377,22 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // API: Customers - Check by phone number
+    if (req.url.startsWith('/api/customers/check/phone/') && req.method === 'GET') {
+        const phone = req.url.split('/').pop().replace(/[^\d]/g, '');
+        const data = readData();
+        const customer = (data.customers || []).find(c => c.phone.replace(/[^\d]/g, '') === phone);
+        setJSON();
+        if (customer) {
+            res.end(JSON.stringify({ found: true, customer }));
+        } else {
+            res.end(JSON.stringify({ found: false }));
+        }
+        return;
+    }
+
     // API: Customers - Check by tgId
-    if (req.url.startsWith('/api/customers/check/') && req.method === 'GET') {
+    if (req.url.startsWith('/api/customers/check/') && !req.url.includes('/phone/') && req.method === 'GET') {
         const tgId = parseInt(req.url.split('/').pop());
         const data = readData();
         const customer = (data.customers || []).find(c => c.tgId === tgId);
