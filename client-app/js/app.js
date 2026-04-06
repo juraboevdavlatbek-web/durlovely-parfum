@@ -9,6 +9,8 @@ if (tg) {
     if (tg.setBackgroundColor) tg.setBackgroundColor('#0c0a09');
 }
 
+const API_BASE = '/api';
+
 window.showAlert = function(msg) {
     if (tg && tg.showAlert) tg.showAlert(msg);
     else alert(msg);
@@ -222,6 +224,24 @@ const pages = {
             </div>
         </div>
     `,
+    orders: `
+        <div class="animate-fluid" style="padding-bottom: 120px;">
+            <div style="padding: 25px 20px 10px; display: flex; align-items: center; gap: 15px;">
+                <button onclick="navigate('profile')" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: #fff;">
+                    <i class="fa-solid fa-arrow-left" style="font-size: 14px;"></i>
+                </button>
+                <h2 class="luxury-text gold-text" style="font-size: 2rem;">Buyurtmalarim</h2>
+            </div>
+            <div id="orders-history-list" style="padding: 0 20px; display: flex; flex-direction: column; gap: 15px;">
+                <!-- Orders will be rendered here -->
+            </div>
+            <div id="orders-empty" style="text-align: center; padding: 60px 0; display: none;">
+                <i class="fa-solid fa-box-open" style="font-size: 50px; color: #333; margin-bottom: 20px; display: block;"></i>
+                <p style="color: #666; margin-bottom: 25px;">Sizda hali buyurtmalar mavjud emas</p>
+                <button class="btn-primary" style="padding: 12px 30px;" onclick="navigate('catalog')">XARID QILISH</button>
+            </div>
+        </div>
+    `,
     profile: `
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <div style="padding: 25px 20px;">
@@ -390,10 +410,14 @@ window.navigate = async function(page) {
             
             // Real order count
             const userPhone = localStorage.getItem('durlovely_user_auth');
-            const myOrders = allOrders.filter(o => o.phone === userPhone || o.name === userPhone);
-            const orderCountEl = document.querySelector('#page-content .animate-fluid [style*="Buyurtmalar"]');
-            if (orderCountEl) {
-                const countDiv = orderCountEl.nextElementSibling;
+            const myOrdersRes = await fetch(`${API_BASE}/orders/my?auth=${userPhone}`);
+            const myOrders = await myOrdersRes.json();
+            
+            const orderCountCard = document.querySelector('#page-content .animate-fluid [style*="Buyurtmalar"]').parentElement;
+            if (orderCountCard) {
+                orderCountCard.onclick = () => navigate('orders');
+                orderCountCard.style.cursor = 'pointer';
+                const countDiv = orderCountCard.querySelector('div:last-child');
                 if (countDiv) countDiv.innerHTML = `${myOrders.length} <span style="font-size: 14px; color: #444;">ta</span>`;
             }
         } catch(e) {
@@ -413,8 +437,64 @@ window.navigate = async function(page) {
         }
     });
 
+    if (page === 'orders') renderOrdersHistory();
+
     if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
 };
+
+async function renderOrdersHistory() {
+    const list = document.getElementById('orders-history-list');
+    const empty = document.getElementById('orders-empty');
+    if (!list) return;
+
+    list.innerHTML = '<div class="premium-loader"></div>';
+
+    try {
+        const userPhone = localStorage.getItem('durlovely_user_auth');
+        const res = await fetch(`${API_BASE}/orders/my?auth=${userPhone}`);
+        const orders = await res.json();
+
+        if (orders.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+
+        empty.style.display = 'none';
+        list.innerHTML = orders.reverse().map(o => {
+            const statusLabels = {
+                'pending': { text: 'Kutishda', color: 'var(--accent)' },
+                'delivered': { text: 'Yetkazildi', color: '#22c55e' },
+                'cancelled': { text: 'Bekor qilindi', color: '#ef4444' }
+            };
+            const label = statusLabels[o.status] || { text: o.status, color: '#888' };
+            
+            return `
+                <div class="liquid-glass animate-fluid" style="padding: 20px; border-radius: 20px; border-color: rgba(255,255,255,0.03);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="font-size: 14px; font-weight: 700; color: #fff;">Buyurtma #${o.id}</span>
+                        <span style="font-size: 11px; font-weight: 800; color: ${label.color}; text-transform: uppercase;">${label.text}</span>
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 15px;">Sana: ${o.date}</div>
+                    <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 15px;">
+                        ${o.items.map(item => `
+                            <div style="font-size: 13px; color: #aaa; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                                <span>${item}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px;">
+                        <span style="font-size: 12px; color: #555;">Jami:</span>
+                        <span style="font-size: 16px; font-weight: 800; color: #fff;">${o.total} UZS</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch(e) {
+        console.error('Render orders failed:', e);
+        list.innerHTML = '<p style="color:#ef4444; text-align:center;">Ma\'lumot yuklashda xatolik</p>';
+    }
+}
 
 
 // 1. Age Gate Global Actions
@@ -874,10 +954,9 @@ window.renderCart = function() {
                 <div style="width: 70px; height: 70px; border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);">
                     <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
-                <img src="${item.img}" style="width: 70px; height: 70px; border-radius: 12px; object-fit: cover;">
                 <div style="flex: 1;">
                     <h4 style="font-size: 14px; font-weight: 600; color: #fff;">${item.name}</h4>
-                    <div style="color: var(--accent); font-weight: 700; margin-top: 5px;">${item.price} UZS</div>
+                    <div style="color: var(--accent); font-weight: 700; margin-top: 5px;">${Number(parseInt(String(item.price).replace(/,/g, ''))).toLocaleString()} UZS</div>
                     <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
                         <button onclick="updateQuantity(${item.id}, -1)" style="width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: none; color: #fff;">-</button>
                         <span style="font-weight: 600;">${item.quantity}</span>
@@ -925,21 +1004,24 @@ window.submitOrder = async function() {
     }
     
     const cart = JSON.parse(localStorage.getItem('durlovely_cart') || '[]');
-    const total = cart.reduce((sum, item) => sum + (parseInt(item.price.replace(/,/g, '')) * item.quantity), 0);
+    const total = cart.reduce((sum, item) => {
+        const price = parseInt(String(item.price).replace(/,/g, ''));
+        return sum + (price * item.quantity);
+    }, 0);
     const fullAddress = `${region}, ${address} (${delivery})`;
-    const tgId = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : 737113132; // Sinov ID
+    const tgId = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : 737113132;
     
     const orderData = {
-        name: userAuth || 'Mijoz', 
-        phone: userAuth || '',
+        name: localStorage.getItem('durlovely_user_auth') || 'Mijoz', 
+        phone: localStorage.getItem('durlovely_user_auth') || '',
         address: fullAddress,
         items: cart.map(i => `${i.name} (${i.quantity} ta)`),
-        total: total,
+        total: total.toLocaleString(),
         tgId: tgId
     };
     
     try {
-        const res = await fetch('http://localhost:3000/api/orders', {
+        const res = await fetch(`${API_BASE}/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderData)
@@ -977,11 +1059,12 @@ async function initApp() {
     const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
     if (tgUser) {
         try {
-            const res = await fetch(`/api/customers/check/${tgUser.id}`);
+            const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}`);
             const result = await res.json();
             if (result.found) {
                 // User already shared contact via bot — auto-login!
                 localStorage.setItem('durlovely_user_auth', result.customer.phone);
+                localStorage.setItem('durlovely_vip_status', result.customer.isVip ? 'true' : 'false');
                 ageGate.classList.add('hide');
                 securityScreen.classList.add('hide');
                 authScreen.classList.add('hide');

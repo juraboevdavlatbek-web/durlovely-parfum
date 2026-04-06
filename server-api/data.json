@@ -42,9 +42,10 @@
       "name": "Test Parfum",
       "price": 100000,
       "vip_price": 80000,
-      "category": "Test",
+      "category": "",
       "stock": 10,
-      "id": 1775389025526
+      "id": 1775389025526,
+      "image": ""
     }
   ],
   "customers": [

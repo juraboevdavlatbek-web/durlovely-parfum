@@ -135,11 +135,26 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-
+    // API: Orders (Admin)
     if (req.url === '/api/orders' && req.method === 'GET') {
-        const data = readData();
         setJSON();
-        res.end(JSON.stringify(data.orders));
+        res.end(JSON.stringify(readData().orders));
+        return;
+    }
+
+    // API: My Orders (Customer)
+    if (req.url.startsWith('/api/orders/my') && req.method === 'GET') {
+        const urlParams = new URL(req.url, `http://${req.headers.host}`);
+        const auth = urlParams.searchParams.get('auth');
+        if (!auth) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: 'Auth required' }));
+            return;
+        }
+        const data = readData();
+        const myOrders = data.orders.filter(o => o.phone === auth || o.customer === auth);
+        setJSON();
+        res.end(JSON.stringify(myOrders));
         return;
     }
 
