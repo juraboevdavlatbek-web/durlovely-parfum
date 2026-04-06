@@ -306,14 +306,15 @@
         }
 
         async function fetchData() {
-            const v = Date.now();
             try {
+                const v = Date.now();
+                const cacheBust = { cache: 'no-store' };
                 const [ordersRes, productsRes, categoriesRes, customersRes, notifsRes] = await Promise.all([
-                    fetch(`${API_BASE}/orders?v=${v}`),
-                    fetch(`${API_BASE}/products?v=${v}`),
-                    fetch(`${API_BASE}/categories?v=${v}`),
-                    fetch(`${API_BASE}/customers?v=${v}`),
-                    fetch(`${API_BASE}/notifications?v=${v}`)
+                    fetch(`${API_BASE}/orders?v=${v}`, cacheBust),
+                    fetch(`${API_BASE}/products?v=${v}`, cacheBust),
+                    fetch(`${API_BASE}/categories?v=${v}`, cacheBust),
+                    fetch(`${API_BASE}/customers?v=${v}`, cacheBust),
+                    fetch(`${API_BASE}/notifications?v=${v}`, cacheBust)
                 ]);
                 state.orders = await ordersRes.json();
                 state.products = await productsRes.json();
