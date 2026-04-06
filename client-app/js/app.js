@@ -1111,12 +1111,17 @@ async function initApp() {
 
     const userAuth = localStorage.getItem('durlovely_user_auth');
     if (userAuth) {
-        // Hide onboarding, show main app
-        ageGate.classList.add('hide');
-        securityScreen.classList.add('hide');
-        authScreen.classList.add('hide');
-        birthdayScreen.classList.add('hide');
-        mainApp.classList.remove('hide');
+        // QUICK HIDE all onboarding screens
+        const onboarding = ['age-gate', 'security', 'auth-screen', 'birthday-screen'];
+        onboarding.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('hide');
+                el.classList.remove('active');
+                el.style.display = 'none'; // Force hide
+            }
+        });
+        if (mainApp) mainApp.classList.remove('hide');
 
         const customer = allCustomers.find(c => c.phone === userAuth || c.tgId == userAuth);
         if (customer) {
