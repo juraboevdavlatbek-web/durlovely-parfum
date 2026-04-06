@@ -622,8 +622,8 @@ window.requestTelegramContact = function() {
             let phone = contact.phone_number || '';
             if (!phone.startsWith('+')) phone = '+' + phone;
             
-            if (!phone.startsWith('+998')) {
-                showAlert("Kechirasiz, faqat O'zbekiston (+998) raqamlari qabul qilinadi.");
+            if (phone.length < 9) {
+                showAlert("Noto'g'ri telefon raqami.");
                 return;
             }
             
@@ -661,7 +661,8 @@ window.verifyPhone = async function() {
     btn.innerText = 'KUTILMOQDA...';
     btn.disabled = true;
 
-    const fullPhone = '+998' + phoneInput;
+    let fullPhone = phoneInput.startsWith('+') ? phoneInput : '+' + phoneInput;
+    fullPhone = fullPhone.replace(/\s+/g, ''); // Remove spaces
     const tgId = (tg && tg.initDataUnsafe?.user) ? tg.initDataUnsafe.user.id : 737113132;
     
     try {
