@@ -345,10 +345,14 @@ window.navigate = async function(page) {
 
     if (page === 'home') {
         const homeGrid = document.getElementById('home-product-grid');
-        if (homeGrid && allProducts.length > 0) {
+        console.log(`[NAV] Home Page. allProducts length: ${allProducts ? allProducts.length : 'NULL'}`);
+        if (homeGrid && allProducts && allProducts.length > 0) {
             // Show latest 4 products
             const latest = [...allProducts].reverse().slice(0, 4);
             homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
+            console.log(`[NAV] Rendered 4 product cards.`);
+        } else {
+            console.warn(`[NAV] Home grid not found or ALL_PRODUCTS empty! Grid: ${!!homeGrid}`);
         }
     }
 
@@ -586,8 +590,8 @@ function showAuthScreen() {
     showScreen('auth-screen');
     const phoneStep = document.getElementById('phone-step');
     
-    // If inside Telegram, use native requestContact
-    if (tg && tg.requestContact) {
+    // If inside Telegram OR localhost, show the premium button
+    if ((tg && tg.requestContact) || window.location.hostname === 'localhost') {
         phoneStep.innerHTML = `
             <div style="text-align:center; padding: 10px 0;">
                 <i class="fa-brands fa-telegram" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px; display: block;"></i>
@@ -610,11 +614,31 @@ function showAuthScreen() {
 }
 
 window.requestTelegramContact = function() {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log("🛠 [Dev Mode] Mocking Telegram Contact Share...");
+        // Simulate a successful verification
+        const phone = '+998901234567';
+        const tgId = 737113132;
+        
+        fetch(`${API_BASE}/customers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phone, tgId: tgId, firstName: 'Local Dev' })
+        }).then(res => res.json()).then(result => {
+            localStorage.setItem('durlovely_user_auth', phone);
+            authScreen.classList.add('hide');
+            birthdayScreen.classList.remove('hide');
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        });
+        return;
+    }
+    
     if (!tg || !tg.requestContact) {
-        // Fallback for browser testing
+        // Fallback for browser testing (manual phone)
         window.verifyPhone();
         return;
     }
+    
     tg.requestContact((sent, response) => {
         if (sent && response && response.contact) {
             const contact = response.contact;
@@ -782,8 +806,10 @@ let allProducts = [];
 
 async function fetchProducts() {
     try {
+        console.log(`[FETCH] Requesting products from ${API_BASE}/products...`);
         const res = await fetch(`${API_BASE}/products?v=${Date.now()}`);
         allProducts = await res.json();
+        console.log(`[FETCH] Success! Received ${allProducts.length} products.`);
         // If navigating to home, refresh the grid
         const homeGrid = document.getElementById('home-product-grid');
         if (homeGrid) {
@@ -791,7 +817,7 @@ async function fetchProducts() {
             homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
         }
     } catch (e) {
-        console.error("Fetch products error:", e);
+        console.error("[FETCH] Products Error:", e);
     }
 }
 
@@ -986,8 +1012,28 @@ window.renderCart = function() {
         `;
     }).join('');
     
-    totalPriceEl.innerText = `${total.toLocaleString()} UZS`;
-};
+}
+
+async function proceedWithOrder(orderData, total) {
+    try {
+        const res = await fetch(`${API_BASE}/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (res.ok) {
+            const result = await res.json();
+            const orderId = result.order.id;
+            localStorage.setItem('durlovely_cart', '[]');
+            showPaymentMethodSelection(orderId, total);
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+    } catch (e) {
+        console.error("Order submission failed:", e);
+        showAlert("Xatolik yuz berdi. Iltimos qaytadan urunib ko'ring.");
+    }
+}
 
 window.updateQuantity = function(id, delta) {
     let cart = JSON.parse(localStorage.getItem('durlovely_cart') || '[]');
@@ -1009,8 +1055,8 @@ window.showCheckout = function() {
 };
 
 window.submitOrder = async function() {
-    const region = document.getElementById('region-select').value;
-    const address = document.getElementById('address-input').value;
+    const region = document.getElementById('region').value;
+    const address = document.getElementById('address').value;
     const deliveryEl = document.querySelector('input[name="delivery"]:checked');
     const delivery = deliveryEl ? deliveryEl.value : '';
     
@@ -1035,23 +1081,106 @@ window.submitOrder = async function() {
         total: total.toLocaleString(),
         tgId: tgId
     };
-    
+
+    if (tg && tg.showPopup && window.location.hostname !== 'localhost') {
+        tg.showPopup({
+            title: 'Buyurtmani tasdiqlash',
+            message: `Jami: ${total.toLocaleString()} UZS\nManzil: ${fullAddress}`,
+            buttons: [
+                { id: 'ok', type: 'default', text: 'HA' },
+                { id: 'cancel', type: 'destructive', text: 'YO\'Q' }
+            ]
+        }, (id) => {
+            if (id === 'ok') proceedWithOrder(orderData, total);
+        });
+    } else {
+        // Browser/Localhost fallback
+        if (confirm(`Buyurtmani tasdiqlaysizmi?\nJami: ${total.toLocaleString()} UZS\nManzil: ${fullAddress}`)) {
+            proceedWithOrder(orderData, total);
+        }
+    }
+};
+
+window.showPaymentMethodSelection = function(orderId, totalAmount) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.position = 'fixed';
+    modal.style.inset = '0';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+    modal.style.backdropFilter = 'blur(10px)';
+    modal.style.zIndex = '3000';
+
+    modal.innerHTML = `
+        <div class="modal-content animate-fluid" style="background: #111; width: 90%; max-width: 400px; padding: 30px; text-align: center;">
+            <h3 class="luxury-text gold-text" style="font-size: 1.8rem; margin-bottom: 10px;">TO'LOV TURI</h3>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 30px;">Buyurtma #${orderId} uchun to'lov turini tanlang</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <button class="liquid-glass" onclick="initiatePayment(${orderId}, 'click', ${totalAmount})" style="padding: 20px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; border-color: #0087ff; background: rgba(0,135,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img src="https://click.uz/click/images/click-logo.png" style="height: 25px; filter: brightness(0) invert(1);">
+                        <span style="font-weight: 700; color: #fff;">CLICK</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color: #0087ff;"></i>
+                </button>
+
+                <button class="liquid-glass" onclick="initiatePayment(${orderId}, 'payme', ${totalAmount})" style="padding: 20px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; border-color: #00c1af; background: rgba(0,193,175,0.05);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img src="https://cdn.payme.uz/logo/payme_color.svg" style="height: 25px;">
+                        <span style="font-weight: 700; color: #fff;">PAYME</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color: #00c1af;"></i>
+                </button>
+
+                <button class="btn-primary" onclick="confirmOrderLater(${orderId})" style="margin-top: 10px; background: none; border: 1px solid #444; color: #888;">KEYINROQ TO'LASH</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+window.confirmOrderLater = async function(orderId) {
     try {
-        const res = await fetch(`${API_BASE}/orders`, {
+        await fetch(`${API_BASE}/orders/${orderId}/confirm-later`, { method: 'POST' });
+    } catch (e) {}
+    document.querySelector('.modal-overlay').remove();
+    navigate('home');
+    showAlert('Buyurtma qabul qilindi. To\'lovni keyinroq amalga oshirishingiz mumkin.');
+};
+
+window.initiatePayment = async function(orderId, method, totalAmount) {
+    try {
+        const res = await fetch(`${API_BASE}/payment/create-invoice`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
+            body: JSON.stringify({ orderId, method, amount: totalAmount })
         });
-        
-        if (res.ok) {
-            localStorage.setItem('durlovely_cart', '[]');
-            showAlert("Buyurtmangiz qabul qilindi! Tezz orada aloqaga chiqamiz.");
-            navigate('home');
-            if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        const result = await res.json();
+        if (result.success && result.url) {
+            if (result.appUrl && window.location.hostname !== 'localhost') {
+                // Try direct app opening
+                window.location.href = result.appUrl;
+                // Fallback to web link after timeout
+                setTimeout(() => {
+                    if (tg && tg.openLink) tg.openLink(result.url);
+                    else window.location.href = result.url;
+                }, 2000);
+            } else {
+                if (tg && tg.openLink) {
+                    tg.openLink(result.url);
+                } else {
+                    window.location.href = result.url;
+                }
+            }
+        } else {
+            showAlert("To'lov havolasini yaratishda xatolik");
         }
     } catch (e) {
-        console.error("Order submission failed:", e);
-        showAlert("Xatolik yuz berdi. Iltimos qaytadan urunib ko'ring.");
+        console.error("Payment error:", e);
+        showAlert("Tizimda xatolik yuz berdi");
     }
 };
 
@@ -1232,6 +1361,23 @@ window.closeRewardModal = function() {
 let allCustomers = [];
 
 async function initApp() {
+    showScreen('splash-screen');
+
+    // 0. LOCALHOST BYPASS (Immediate skip for testing)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        const testUser = '+998901234567';
+        localStorage.setItem('durlovely_user_auth', testUser);
+        localStorage.setItem('durlovely_age_verified_v2', 'true');
+        hideAllOnboarding();
+        mainApp.classList.remove('hide');
+        await fetchProducts();
+        navigate('home');
+        return; 
+    }
+
+    // Await TG Ready just in case
+    if (tg && tg.ready) tg.ready();
+
     // 1. SILENT AUTO-LOGIN CHECK (Priority #1)
     const userAuth = localStorage.getItem('durlovely_user_auth');
     const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
@@ -1245,25 +1391,27 @@ async function initApp() {
                 if (result.blocked) {
                     showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
                     localStorage.removeItem('durlovely_user_auth');
+                    showScreen('age-gate'); // Fallback to start
                     return;
                 }
                 if (result.found) customer = result.customer;
                 else {
-                    // Account was deleted from admin panel! Wipe out local state so it stops logging them in
                     localStorage.removeItem('durlovely_user_auth');
                 }
-            } else if (tgUser) {
+            }
+            
+            // If phone auth failed or not exists, try TG ID
+            if (!customer && tgUser) {
                 const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}?v=${Date.now()}`, { cache: 'no-store' });
                 const result = await res.json();
                 if (result.blocked) {
                     showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
+                    showScreen('age-gate');
                     return;
                 }
                 if (result.found) {
                     customer = result.customer;
                     localStorage.setItem('durlovely_user_auth', customer.phone);
-                } else {
-                    localStorage.removeItem('durlovely_user_auth');
                 }
             }
 
@@ -1294,7 +1442,7 @@ async function initApp() {
 }
 
 function hideAllOnboarding() {
-    ['age-gate', 'security', 'auth-screen', 'birthday-screen'].forEach(id => {
+    ['splash-screen', 'age-gate', 'security', 'auth-screen', 'birthday-screen'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.classList.add('hide');

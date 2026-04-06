@@ -13,8 +13,142 @@
         "Amber Gold x1"
       ],
       "total": "450,000",
-      "status": "pending",
+      "status": "delivered",
       "date": "2026-04-04"
+    },
+    {
+      "name": "+998901234567",
+      "phone": "+998901234567",
+      "address": "buxoro, njj (quva)",
+      "items": [
+        "axis y (1 ta)"
+      ],
+      "total": "150,000",
+      "tgId": 737113132,
+      "id": 1775475342874,
+      "status": "pending",
+      "date": "4/6/2026, 8:35:42 PM"
+    },
+    {
+      "name": "+998901234567",
+      "phone": "+998901234567",
+      "address": "buxoro, njn (quva)",
+      "items": [
+        "Amber Gold (1 ta)"
+      ],
+      "total": "450,000",
+      "tgId": 737113132,
+      "id": 1775475801533,
+      "status": "pending",
+      "date": "4/6/2026, 8:43:21 PM"
+    },
+    {
+      "name": "+998901234567",
+      "phone": "+998901234567",
+      "address": "buxoro, jjdvj (quva)",
+      "items": [
+        "Amber Gold (1 ta)"
+      ],
+      "total": "450,000",
+      "tgId": 737113132,
+      "id": 1775476119797,
+      "status": "pending",
+      "date": "4/6/2026, 8:48:39 PM"
+    },
+    {
+      "name": "+998901234567",
+      "phone": "+998901234567",
+      "address": "toshkent_v, jjj (quva)",
+      "items": [
+        "Amber Gold (1 ta)"
+      ],
+      "total": "450,000",
+      "tgId": 737113132,
+      "id": 1775476428451,
+      "status": "pending",
+      "date": "4/6/2026, 8:53:48 PM"
+    },
+    {
+      "name": "+998901234567",
+      "phone": "+998901234567",
+      "address": "buxoro, jj (quva)",
+      "items": [
+        "Amber Gold (1 ta)"
+      ],
+      "total": "450,000",
+      "tgId": 737113132,
+      "id": 1775476736514,
+      "status": "pending",
+      "date": "4/6/2026, 8:58:56 PM"
+    },
+    {
+      "name": "+998901234567",
+      "phone": "+998901234567",
+      "address": "fargona, hj (quva)",
+      "items": [
+        "axis y (1 ta)"
+      ],
+      "total": "150,000",
+      "tgId": 737113132,
+      "id": 1775476990730,
+      "status": "pending",
+      "date": "4/6/2026, 9:03:10 PM"
+    },
+    {
+      "status": "pending",
+      "id": 1775477224335,
+      "date": "4/6/2026, 9:07:04 PM"
+    },
+    {
+      "id": 1775478207165,
+      "customer": "Mijoz",
+      "items": [],
+      "total": "0",
+      "status": "pending",
+      "paymentStatus": "pending",
+      "date": "4/6/2026, 9:23:27 PM"
+    },
+    {
+      "id": 1775478211129,
+      "customer": "Mijoz",
+      "items": [],
+      "total": "0",
+      "status": "pending",
+      "paymentStatus": "pending",
+      "date": "4/6/2026, 9:23:31 PM"
+    },
+    {
+      "id": 1775478213898,
+      "customer": "Mijoz",
+      "items": [],
+      "total": "0",
+      "status": "pending",
+      "paymentStatus": "pending",
+      "date": "4/6/2026, 9:23:33 PM"
+    },
+    {
+      "id": 1775478217423,
+      "customer": "Mijoz",
+      "items": [],
+      "total": "0",
+      "status": "pending",
+      "paymentStatus": "pending",
+      "date": "4/6/2026, 9:23:37 PM"
+    },
+    {
+      "id": 1775479097462,
+      "customer": "+998901234567",
+      "items": [
+        "Amber Gold (2 ta)"
+      ],
+      "total": "900,000",
+      "name": "+998901234567",
+      "phone": "+998901234567",
+      "address": "fargona, f (quva)",
+      "tgId": 737113132,
+      "status": "pending",
+      "paymentStatus": "pending",
+      "date": "4/6/2026, 9:38:17 PM"
     }
   ],
   "products": [
@@ -71,6 +205,13 @@
       "tgId": 7190674062,
       "firstName": "Damirbe",
       "dateJoined": "4/5/2026"
+    },
+    {
+      "phone": "+998901234567",
+      "tgId": 737113132,
+      "firstName": "Local Dev",
+      "id": 1775473427290,
+      "dateJoined": "4/6/2026"
     }
   ]
 }

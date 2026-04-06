@@ -9,6 +9,7 @@ const ADMIN_CHAT_ID = 737113132; // Admin Telegram chat ID
 // Telegram Helper
 function sendTelegramMessage(chatId, text) {
     if (!chatId) return;
+    console.log(`[BOT] Sending to ${chatId}: ${text.replace(/<[^>]*>/g, '').substring(0, 50)}...`);
     const body = JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' });
     const options = {
         hostname: 'api.telegram.org',
@@ -89,6 +90,7 @@ function localDbFallback(action, collection, body) {
     const DATA_FILE = path.join(__dirname, 'data.json');
     if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({ orders: [], products: [], categories: [], customers: [], notifications: [] }));
     let data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    console.log(`[LOCAL-DB] Action: ${action}, Collection: ${collection}. Documents: ${data[collection]?.length || 0}`);
     if (action === 'find') return { documents: data[collection] || [] };
     if (action === 'findOne') return { document: (data[collection] || []).find(x => x.id == body.filter?.id || x.tgId == body.filter?.tgId || x.phone == body.filter?.phone) };
     if (action === 'insertOne') {
@@ -138,6 +140,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.setHeader('X-Pinggy-No-Screen', 'true');
+    console.log(`[REQ] ${req.method} ${req.url}`);
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -326,10 +329,17 @@ const server = http.createServer(async (req, res) => {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
-            const order = JSON.parse(body);
-            order.id = Date.now();
-            order.status = 'pending';
-            order.date = new Date().toLocaleString();
+            const orderData = JSON.parse(body);
+            const order = { 
+                id: Date.now(), 
+                customer: orderData.customer || orderData.name || 'Mijoz',
+                items: orderData.items || [],
+                total: orderData.total || '0',
+                ...orderData, 
+                status: 'pending', 
+                paymentStatus: 'pending',
+                date: new Date().toLocaleString() 
+            };
             await dbRequest('insertOne', 'orders', { document: order });
             
             const search = await dbRequest('findOne', 'customers', { filter: { $or: [{ phone: order.phone }, { tgId: order.tgId }] } });
@@ -345,12 +355,29 @@ const server = http.createServer(async (req, res) => {
                 await dbRequest('updateOne', 'customers', { filter: { id: customer.id }, update: { $set: { dur: newDur, durHistory: history } } });
             }
 
-            if (order.tgId) sendTelegramMessage(order.tgId, `🛍 <b>Buyurtma #${order.id} qabul qilindi!</b>\n\nTez orada aloqaga chiqamiz.`);
-            sendTelegramMessage(ADMIN_CHAT_ID, `🔔 <b>YANGI BUYURTMA!</b>\n\n#${order.id}\n${order.total} UZS\n${order.address}`);
+            // Notify Admin (Pending Status)
+            sendTelegramMessage(ADMIN_CHAT_ID, `🛠 <b>[ADMIN PANEL] YANGI BUYURTMA #${order.id}</b>\n\n💰 ${order.total} UZS\n📍 ${order.address}\n\n<i>To'lov kutilmoqda... (v2.0)</i>`);
 
             setJSON();
             res.end(JSON.stringify({ success: true, order }));
         });
+        return;
+    }
+
+    // New Endpoint: Confirm Pay Later / Manual Confirmation
+    if (req.url.includes('/confirm-later') && req.method === 'POST') {
+        const id = parseInt(req.url.split('/')[3]);
+        const search = await dbRequest('findOne', 'orders', { filter: { id: id } });
+        if (search.document) {
+            const order = search.document;
+            if (order.tgId) {
+                sendTelegramMessage(order.tgId, `🛍 <b>Buyurtma #${order.id} qabul qilindi!</b>\n\nTo'lov turi: Naqd / Keyinroq.\nTez orada aloqaga chiqamiz. ✨`);
+            }
+            res.end(JSON.stringify({ success: true }));
+        } else {
+            res.writeHead(404);
+            res.end(JSON.stringify({ success: false }));
+        }
         return;
     }
 
@@ -363,6 +390,67 @@ const server = http.createServer(async (req, res) => {
             await dbRequest('updateOne', 'orders', { filter: { id: id }, update: { $set: { status: status } } });
             setJSON();
             res.end(JSON.stringify({ success: true }));
+        });
+        return;
+    }
+
+    // API: Payments (Click & Payme)
+    if (req.url.startsWith('/api/payment/create-invoice') && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            const { orderId, method, amount } = JSON.parse(body);
+            setJSON();
+            
+            if (method === 'click') {
+                const CLICK_SERVICE_ID = '33124'; // Placeholder
+                const CLICK_MERCHANT_ID = '25412'; // Placeholder
+                const webUrl = `https://my.click.uz/services/pay?service_id=${CLICK_SERVICE_ID}&merchant_id=${CLICK_MERCHANT_ID}&amount=${amount}&transaction_param=${orderId}`;
+                const appUrl = `click://pay?service_id=${CLICK_SERVICE_ID}&merchant_id=${CLICK_MERCHANT_ID}&amount=${amount}&transaction_param=${orderId}`;
+                res.end(JSON.stringify({ success: true, url: webUrl, appUrl }));
+            } else if (method === 'payme') {
+                const PAYME_MERCHANT_ID = '65bf65c28e67a54c9c8e8c8a'; // Placeholder
+                const payload = `m=${PAYME_MERCHANT_ID};ac.order_id=${orderId};a=${amount * 100}`;
+                const params = Buffer.from(payload).toString('base64');
+                const webUrl = `https://checkout.paycom.uz/${params}`;
+                const appUrl = `payme://${params}`; // Deep link for Payme app
+                res.end(JSON.stringify({ success: true, url: webUrl, appUrl }));
+            }
+        });
+        return;
+    }
+
+    // Click Callbacks (Prepare & Complete)
+    if (req.url.startsWith('/api/payment/click/') && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            const params = new URLSearchParams(body);
+            const click_trans_id = params.get('click_trans_id');
+            const merchant_trans_id = params.get('merchant_trans_id'); // our orderId
+            const amount = params.get('amount');
+            const action = req.url.includes('prepare') ? 0 : 1;
+            const error = params.get('error');
+
+            if (error == 0) {
+                if (merchant_trans_id && click_trans_id) {
+                    await dbRequest('updateOne', 'orders', { 
+                        filter: { id: parseInt(merchant_trans_id) }, 
+                        update: { $set: { paymentStatus: 'paid', paid_at: new Date().toLocaleString() } } 
+                    });
+                    
+                    // Notify User after payment
+                    const search = await dbRequest('findOne', 'orders', { filter: { id: parseInt(merchant_trans_id) } });
+                    if (search.document && search.document.tgId) {
+                        sendTelegramMessage(search.document.tgId, `✅ <b>To'lov tasdiqlandi!</b>\n\nBuyurtma #${merchant_trans_id} muvaffaqiyatli to'landi. Tez orada yetkazib beramiz! ✨`);
+                    }
+                    sendTelegramMessage(ADMIN_CHAT_ID, `💰 <b>BUYURTMA #${merchant_trans_id} TO'LANDI!</b>\nClick trans ID: ${click_trans_id}`);
+                }
+                setJSON();
+                res.end(JSON.stringify({ click_trans_id, merchant_trans_id, error: 0, error_note: 'Success' }));
+            } else {
+                res.end(JSON.stringify({ error: -1, error_note: 'Failure' }));
+            }
         });
         return;
     }
@@ -410,10 +498,21 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.url.startsWith('/api/customers/check/') && req.method === 'GET') {
-        const tgId = parseInt(req.url.split('/').pop());
-        const result = await dbRequest('findOne', 'customers', { filter: { tgId: tgId } });
+        const parts = req.url.split('?')[0].split('/'); // Ignore query params
+        const identifier = parts.pop();
+        const type = parts.pop(); // 'check' or 'phone'
+
+        let filter = {};
+        if (type === 'phone') {
+            filter = { phone: decodeURIComponent(identifier) };
+        } else {
+            filter = { tgId: parseInt(identifier) };
+        }
+
+        const result = await dbRequest('findOne', 'customers', { filter });
         const customer = result.document;
         setJSON();
+        
         if (customer && customer.isBlocked) {
             res.end(JSON.stringify({ found: true, blocked: true }));
             return;
@@ -511,7 +610,13 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // Static Files Handling
+    // Static Files Handling: Prevent API routes from falling through to static server
+    if (req.url.startsWith('/api/')) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'API route not found' }));
+        return;
+    }
+
     const PUBLIC_DIR = path.join(__dirname, '..');
     const mimeTypes = {
         '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
