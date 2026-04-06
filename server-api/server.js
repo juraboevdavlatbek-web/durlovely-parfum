@@ -323,9 +323,13 @@ const server = http.createServer(async (req, res) => {
             const search = await dbRequest('findOne', 'customers', { filter: { $or: [{ phone: order.phone }, { tgId: order.tgId }] } });
             if (search.document) {
                 const customer = search.document;
-                const newDur = (customer.dur || 0) + 1;
+                // Award 1 Dur for every 100,000 UZS spent
+                const amountClean = parseInt(order.total.replace(/[^\d]/g, '')) || 0;
+                const bonusDur = Math.max(1, Math.floor(amountClean / 100000));
+                
+                const newDur = (customer.dur || 0) + bonusDur;
                 const history = customer.durHistory || [];
-                history.unshift({ reason: `#${order.id} buyurtma uchun bonus`, amount: 1, date: new Date().toLocaleString() });
+                history.unshift({ reason: `#${order.id} buyurtma uchun bonus`, amount: bonusDur, date: new Date().toLocaleString() });
                 await dbRequest('updateOne', 'customers', { filter: { id: customer.id }, update: { $set: { dur: newDur, durHistory: history } } });
             }
 
@@ -352,6 +356,34 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API: Customers
+    if (req.url === '/api/customers/claim-reward' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            const { phone, cost, prize } = JSON.parse(body);
+            const search = await dbRequest('findOne', 'customers', { filter: { phone: phone } });
+            if (!search.document) {
+                res.writeHead(404);
+                res.end(JSON.stringify({ success: false, message: 'User not found' }));
+                return;
+            }
+            const customer = search.document;
+            const currentDur = customer.dur || 0;
+            if (currentDur < cost) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ success: false, message: 'Insufficient Dur' }));
+                return;
+            }
+            const newDur = currentDur - cost;
+            const history = customer.durHistory || [];
+            history.unshift({ reason: `Dur Box ochildi (${prize})`, amount: -cost, date: new Date().toLocaleString() });
+            await dbRequest('updateOne', 'customers', { filter: { id: customer.id }, update: { $set: { dur: newDur, durHistory: history } } });
+            setJSON();
+            res.end(JSON.stringify({ success: true, newDur }));
+        });
+        return;
+    }
+
     if (req.url.startsWith('/api/customers/check/phone/') && req.method === 'GET') {
         const phone = req.url.split('/').pop().replace(/[^\d]/g, '');
         const result = await dbRequest('findOne', 'customers', { filter: { phone: { $regex: phone } } });

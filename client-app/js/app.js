@@ -70,19 +70,19 @@ const pages = {
 
             <!-- Dur Box Gamification -->
             <div style="padding: 10px 15px 30px;">
-                <div class="liquid-glass" style="padding: 25px; border-radius: 28px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(28,25,23,1), rgba(161,98,7,0.15)); border-color: rgba(161,98,7,0.2);">
+                <div id="dur-box-card" class="liquid-glass" onclick="openDurBox()" style="padding: 25px; border-radius: 28px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(28,25,23,1), rgba(161,98,7,0.15)); border-color: rgba(161,98,7,0.2); cursor: pointer;">
                     <div style="flex: 1;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                             <h3 class="luxury-text gold-text" style="font-size: 1.6rem;">Dur Box</h3>
-                            <span style="background: rgba(161,98,7,0.2); color: var(--accent); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px;">LVL 2</span>
+                            <span id="dur-level-badge" style="background: rgba(161,98,7,0.2); color: var(--accent); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px;">LVL 1</span>
                         </div>
-                        <p style="font-size: 13px; color: #888; font-weight: 300;">Keyingi sovg'agacha 150 ball qoldi</p>
+                        <p id="dur-progress-text" style="font-size: 13px; color: #888; font-weight: 300;">Keyingi sovg'agacha 50 ball qoldi</p>
                         <div style="margin-top: 18px; height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px; width: 85%; position: relative; overflow: hidden;">
-                            <div class="shimmer" style="position: absolute; left: 0; top: 0; bottom: 0; width: 65%; background: var(--accent); border-radius: 10px; box-shadow: 0 0 15px var(--accent);"></div>
+                            <div id="dur-progress-fill" class="shimmer" style="position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--accent); border-radius: 10px; box-shadow: 0 0 15px var(--accent); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
                         </div>
                     </div>
                     <div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: rgba(161,98,7,0.1); border-radius: 24px; transform: rotate(-5deg); border: 1px solid rgba(161,98,7,0.2);">
-                        <i class="fa-solid fa-gift" style="font-size: 35px; color: var(--accent);"></i>
+                        <i id="dur-box-icon" class="fa-solid fa-gift" style="font-size: 35px; color: var(--accent);"></i>
                     </div>
                 </div>
             </div>
@@ -1119,6 +1119,113 @@ window.showNotifications = function() {
         });
 };
 
+const DUR_LEVELS = [
+    { lvl: 1, min: 0, max: 50, reward: '-10% CHEGIRMA', code: 'DUR10' },
+    { lvl: 2, min: 50, max: 150, reward: '-15% CHEGIRMA', code: 'DUR15' },
+    { lvl: 3, min: 150, max: 400, reward: 'SOVG\'A TO\'PLAMI', code: 'DURGIFT' },
+    { lvl: 4, min: 400, max: 1000, reward: 'VIP STATUS', code: 'DURVIP' }
+];
+
+window.updateDurBox = function() {
+    const userAuth = localStorage.getItem('durlovely_user_auth');
+    if (!userAuth) return;
+    
+    const customer = allCustomers.find(c => c.phone === userAuth || (c.tgId && c.tgId == userAuth));
+    if (!customer) return;
+
+    const dur = customer.dur || 0;
+    const durCountEl = document.getElementById('dur-count');
+    if (durCountEl) durCountEl.innerText = dur.toFixed(1);
+
+    let currentLevel = DUR_LEVELS[0];
+    for (let l of DUR_LEVELS) {
+        if (dur >= l.min) currentLevel = l;
+    }
+
+    const badge = document.getElementById('dur-level-badge');
+    const progressFill = document.getElementById('dur-progress-fill');
+    const progressText = document.getElementById('dur-progress-text');
+    const boxIcon = document.getElementById('dur-box-icon');
+    const card = document.getElementById('dur-box-card');
+
+    if (badge) badge.innerText = `LVL ${currentLevel.lvl}`;
+    
+    if (dur >= currentLevel.max && currentLevel.lvl < 4) {
+        if (progressText) progressText.innerText = "SOVG'A TAYYOR! OCHISH UCHUN BOSING";
+        if (progressFill) progressFill.style.width = "100%";
+        if (boxIcon) {
+            boxIcon.classList.add('fa-bounce');
+            boxIcon.style.color = "#fbbf24";
+        }
+        if (card) card.style.boxShadow = "0 0 35px rgba(161,98,7,0.5)";
+    } else {
+        const remaining = currentLevel.max - dur;
+        const percent = ((dur - currentLevel.min) / (currentLevel.max - currentLevel.min)) * 100;
+        if (progressText) progressText.innerText = currentLevel.lvl === 4 ? "Siz eng yuqori darajadasiz!" : `Keyingi sovg'agacha ${Math.ceil(remaining)} ball qoldi`;
+        if (progressFill) progressFill.style.width = `${Math.min(100, Math.max(5, percent))}%`;
+        if (boxIcon) {
+            boxIcon.classList.remove('fa-bounce');
+            boxIcon.style.color = "var(--accent)";
+        }
+        if (card) card.style.boxShadow = "none";
+    }
+};
+
+window.openDurBox = function() {
+    const userAuth = localStorage.getItem('durlovely_user_auth');
+    const customer = allCustomers.find(c => c.phone === userAuth || (c.tgId && c.tgId == userAuth));
+    if (!customer) return;
+
+    const dur = customer.dur || 0;
+    let currentLevel = DUR_LEVELS[0];
+    for (let l of DUR_LEVELS) {
+        if (dur >= l.min) currentLevel = l;
+    }
+
+    if (dur < currentLevel.max || currentLevel.lvl >= 4) {
+        showAlert(`Sizda hozircha ochish uchun yetarli ball yo'q. Yana ${Math.ceil(currentLevel.max - dur)} ball to'plang!`);
+        return;
+    }
+
+    // Start opening animation
+    const icon = document.getElementById('dur-box-icon');
+    icon.classList.remove('fa-bounce');
+    icon.classList.add('fa-shake');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+
+    setTimeout(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/customers/claim-reward`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: customer.phone, cost: currentLevel.max, prize: currentLevel.reward })
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                // Show Reward Modal
+                document.getElementById('reward-title').innerText = "TABRIKLAYMIZ!";
+                document.getElementById('reward-value').innerText = currentLevel.reward;
+                document.getElementById('reward-code').innerText = currentLevel.code;
+                document.getElementById('reward-modal').classList.remove('hide');
+                
+                // Refresh data
+                initApp();
+            } else {
+                showAlert(result.message || "Xatolik yuz berdi");
+            }
+        } catch (e) {
+            showAlert("Serverga ulanish xatosi");
+        } finally {
+            icon.classList.remove('fa-shake');
+        }
+    }, 1500);
+};
+
+window.closeRewardModal = function() {
+    document.getElementById('reward-modal').classList.add('hide');
+};
+
 let allCustomers = [];
 
 async function initApp() {
@@ -1211,6 +1318,7 @@ async function updateClientContext(customer) {
     try {
         const res = await fetch(`${API_BASE}/customers?v=${Date.now()}`);
         allCustomers = await res.json();
+        updateDurBox();
     } catch(e) {}
 
     fetch(`${API_BASE}/notifications?v=${Date.now()}`)
