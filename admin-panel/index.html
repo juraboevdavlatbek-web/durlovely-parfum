@@ -228,6 +228,19 @@
                     <label>Stokda (dona)</label>
                     <input type="number" id="p-stock" required>
                 </div>
+                <div class="form-group">
+                    <label>Mahsulot rasmi</label>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div id="image-preview" style="width: 80px; height: 80px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; color: #444;">
+                            <i class="fa-solid fa-camera" style="font-size: 24px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <input type="file" id="p-image-file" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                            <button type="button" class="liquid-glass" style="width: 100%; padding: 10px; font-size: 11px; font-weight: 700;" onclick="document.getElementById('p-image-file').click()">RASM TANLASH</button>
+                            <input type="hidden" id="p-image-url">
+                        </div>
+                    </div>
+                </div>
                 <div style="display: flex; gap: 15px; margin-top: 30px;">
                     <button type="button" class="btn-primary" style="background: transparent; border: 1px solid var(--border);" onclick="closeModal()">BEKOR QILISH</button>
                     <button type="submit" class="btn-primary" style="flex: 1;">SAQLASH</button>
@@ -453,8 +466,8 @@
                                 <tr>
                                     <td>
                                         <div style="display: flex; align-items: center; gap: 15px;">
-                                            <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #444;">
-                                                <i class="fa-solid fa-bottle-droplet"></i>
+                                            <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #444;">
+                                                ${p.image ? `<img src="${p.image}" style="width: 100%; height: 100%; object-fit: cover;">` : '<i class="fa-solid fa-bottle-droplet"></i>'}
                                             </div>
                                             <div>
                                                 <div style="font-weight: 700; font-size: 15px; color: #fff;">${p.name}</div>
@@ -601,10 +614,18 @@
                 document.getElementById('p-vip-price').value = p.vip_price;
                 document.getElementById('p-category').value = p.category;
                 document.getElementById('p-stock').value = p.stock;
+                document.getElementById('p-image-url').value = p.image || '';
+                if (p.image) {
+                    document.getElementById('image-preview').innerHTML = `<img src="${p.image}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                } else {
+                    document.getElementById('image-preview').innerHTML = `<i class="fa-solid fa-camera" style="font-size: 24px;"></i>`;
+                }
             } else {
                 document.getElementById('modal-title').innerText = "Yangi Mahsulot";
                 document.getElementById('product-form').reset();
                 document.getElementById('p-id').value = '';
+                document.getElementById('p-image-url').value = '';
+                document.getElementById('image-preview').innerHTML = `<i class="fa-solid fa-camera" style="font-size: 24px;"></i>`;
             }
             
             modal.style.display = 'flex';
@@ -626,7 +647,8 @@
                 price: parseInt(document.getElementById('p-price').value),
                 vip_price: parseInt(document.getElementById('p-vip-price').value),
                 category: document.getElementById('p-category').value,
-                stock: parseInt(document.getElementById('p-stock').value)
+                stock: parseInt(document.getElementById('p-stock').value),
+                image: document.getElementById('p-image-url').value
             };
 
             const url = id ? `${API_BASE}/products/${id}` : `${API_BASE}/products`;
@@ -645,6 +667,36 @@
                 }
             } catch (e) { showAlert("Server xatosi"); }
         };
+
+        async function handleImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Data = e.target.result;
+                try {
+                    const res = await fetch(`${API_BASE}/upload`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: file.name,
+                            data: base64Data
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        document.getElementById('p-image-url').value = result.url;
+                        document.getElementById('image-preview').innerHTML = `<img src="${result.url}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    } else {
+                        showAlert("Rasm yuklashda xatolik");
+                    }
+                } catch (err) {
+                    showAlert("Server bilan aloqa uzildi");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
 
         // Modalni chetdan yopish
         window.onclick = (e) => {

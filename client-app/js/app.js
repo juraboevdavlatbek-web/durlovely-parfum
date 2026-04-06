@@ -674,14 +674,19 @@ function renderLikes() {
 }
 
 // 2.9 Catalog & Search Logic
-const allProducts = [
-    { id: 1, name: "Amber Gold", type: "Eau de Parfum", gender: "Uniseks", price: "450,000", vip: "380,000", img: "../shared-assets/assets/images/amber_gold.png", audio: true, desc: "Sharqona va iliq ifor. Mushk va ambra uyg'unligi." },
-    { id: 2, name: "Durlovely Signature", type: "Signature Scent", gender: "Ayollar", price: "520,000", vip: "440,000", img: "../shared-assets/assets/images/logo.png", audio: true, desc: "Brendimizning o'ziga xos hidi. Gulli va mevali notalar." },
-    { id: 3, name: "Black Oud", type: "Extrait de Parfum", gender: "Erkaklar", price: "680,000", vip: "590,000", img: "../shared-assets/assets/images/banner.png", audio: true, desc: "Kuchli va sirli. Eng qimmatbaho daraxt ifori." },
-    { id: 4, name: "White Velvet", type: "Eau de Parfum", gender: "Ayollar", price: "410,000", vip: "340,000", img: "../shared-assets/assets/images/amber_gold.png", audio: false, desc: "Yumshoq va nafis. Oq gullar va vanil hidi." },
-    { id: 5, name: "Royal Jasmine", type: "Eau de Parfum", gender: "Ayollar", price: "480,000", vip: "400,000", img: "../shared-assets/assets/images/logo.png", audio: true, desc: "Qirollik yasmini. Yorqin va unutilmas." },
-    { id: 6, name: "Sandal Dusk", type: "Eau de Parfum", gender: "Erkaklar", price: "550,000", vip: "470,000", img: "../shared-assets/assets/images/banner.png", audio: false, desc: "Kechki salqinlik. Sandal daraxti va ziravorlar." }
-];
+let allProducts = [];
+
+async function fetchProducts() {
+    try {
+        const res = await fetch(`${API_BASE}/products`);
+        allProducts = await res.json();
+        // If navigating to home, refresh the grid
+        const homeGrid = document.getElementById('home-product-grid');
+        if (homeGrid) homeGrid.innerHTML = allProducts.slice(0, 4).map(p => renderProductCard(p)).join('');
+    } catch (e) {
+        console.error("Fetch products error:", e);
+    }
+}
 
 window.searchProducts = function(query) {
     const resultsContainer = document.getElementById('catalog-grid');
@@ -708,10 +713,15 @@ window.playAudio = function(id) {
 };
 
 function renderProductCard(p) {
+    const isVip = localStorage.getItem('durlovely_vip_status') === 'true';
+    const displayPrice = isVip ? (p.vip_price || p.price) : p.price;
+    const formattedPrice = Number(displayPrice).toLocaleString();
+    const productImg = p.image || p.img || '../shared-assets/assets/images/logo.png';
+
     return `
         <div class="product-card liquid-glass" style="padding: 12px; border-radius: 24px; cursor: pointer;" onclick="showProductDetail(${p.id})">
             <div style="height: 180px; border-radius: 18px; overflow: hidden; margin-bottom: 12px; position: relative;">
-                <img src="${p.img}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                 ${p.audio ? `
                     <button class="audio-btn-${p.id} liquid-glass" onclick="event.stopPropagation(); playAudio(${p.id})" style="position: absolute; bottom: 10px; left: 10px; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); border-color: var(--accent); font-size: 14px; z-index: 5;">
                         <i class="fa-solid fa-volume-high"></i>
@@ -722,10 +732,10 @@ function renderProductCard(p) {
                 </div>
             </div>
             <h4 style="font-size: 14px; font-weight: 600; color: #fff; font-family: 'Montserrat', sans-serif;">${p.name}</h4>
-            <p style="font-size: 11px; color: #888; margin: 4px 0 12px;">${p.type} • ${p.gender}</p>
+            <p style="font-size: 11px; color: #888; margin: 4px 0 12px;">${p.category || 'Eau de Parfum'} • ${p.gender || 'Uniseks'}</p>
             <div style="display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 16px; font-weight: 700; color: #fff;">${p.price} UZS</span>
-                <span class="gold-text" style="font-size: 12px; font-weight: 600;">VIP: ${p.vip} UZS</span>
+                <span style="font-size: 16px; font-weight: 700; color: #fff;">${formattedPrice} UZS</span>
+                ${isVip ? `<span class="gold-text" style="font-size: 10px; font-weight: 800;">VIP CHEGIRMADA</span>` : `<span class="gold-text" style="font-size: 12px; font-weight: 600;">VIP: ${Number(p.vip_price || p.price * 0.8).toLocaleString()} UZS</span>`}
             </div>
             <button class="btn-primary" style="width: 100%; height: 38px; font-size: 11px; margin-top: 15px; border-radius: 12px;" onclick="event.stopPropagation(); addToCart(${p.id})">SAVATCHAGA</button>
         </div>
@@ -757,19 +767,40 @@ window.showProductDetail = function(id) {
                 </div>
                 
                 <div style="margin-top: 30px;">
-                    <h3 class="luxury-text" style="font-size: 1.2rem; margin-bottom: 15px;">Ifor haqida</h3>
-                    <p style="color: #aaa; font-size: 15px; line-height: 1.8; font-weight: 300;">${p.desc}</p>
+                <button onclick="navigate('catalog')" style="position: absolute; top: 20px; left: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; color: #fff; border: 1px solid rgba(255,255,255,0.1); z-index: 10; font-size: 16px;">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, transparent 50%);"></div>
+            </div>
+
+            <div style="padding: 30px 20px; margin-top: -40px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                    <div>
+                        <span style="color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase;">${p.category || 'Eau de Parfum'}</span>
+                        <h2 class="luxury-text gold-text" style="font-size: 2.2rem; margin-top: 5px;">${p.name}</h2>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="display: block; font-size: 11px; color: #666; text-transform: uppercase;">Hajmi</span>
+                        <span style="font-size: 16px; font-weight: 700; color: #fff;">100 ml</span>
+                    </div>
                 </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px;">
-                    <div class="liquid-glass" style="padding: 20px; text-align: center; border-color: rgba(255,255,255,0.05);">
-                        <span style="display: block; font-size: 10px; color: #666; text-transform: uppercase;">Standard Narx</span>
-                        <span style="font-size: 18px; font-weight: 700; color: #fff;">${p.price}</span>
+
+                <p style="font-weight: 300; line-height: 1.8; color: #888; font-size: 15px; margin-bottom: 35px;">
+                    ${p.desc || "Ushbu premium ifor sizga o'zgacha dabdaba va ishonch tuyg'usini taqdim etadi. Tabiiy ingredientlardan tayyorlangan bo'lib, uzoq muddat davomida o'z tarovatini yo'qotmaydi."}
+                </p>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding: 25px; border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);">
+                    <div>
+                        <span style="display: block; font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 8px;">Narxi</span>
+                        <span style="font-size: 24px; font-weight: 800; color: #fff;">${formattedPrice} <span style="font-size: 12px; color: #444;">UZS</span></span>
+                        ${isVip ? `<div style="font-size: 11px; color: #666; margin-top: 4px; text-decoration: line-through;">${formattedOldPrice} UZS</div>` : ''}
                     </div>
-                    <div class="liquid-glass" style="padding: 20px; text-align: center; border-color: var(--accent);">
+                    <div style="text-align: right;">
                         <span style="display: block; font-size: 10px; color: var(--accent); text-transform: uppercase;">VIP Klub</span>
-                        <span class="gold-text" style="font-size: 18px; font-weight: 700;">${p.vip}</span>
+                        <span class="gold-text" style="font-size: 18px; font-weight: 700;">${Number(p.vip_price || p.price * 0.8).toLocaleString()}</span>
                     </div>
+                </div></div>
                 </div>
                 
                 <div style="margin-top: 50px; display: flex; gap: 15px;">
@@ -834,10 +865,15 @@ window.renderCart = function() {
     
     let total = 0;
     cartList.innerHTML = cart.map(item => {
-        const itemTotal = parseInt(item.price.replace(/,/g, '')) * item.quantity;
+        const itemPrice = parseInt(String(item.price).replace(/,/g, ''));
+        const itemTotal = itemPrice * item.quantity;
         total += itemTotal;
+        const productImg = item.image || item.img || '../shared-assets/assets/images/logo.png';
         return `
             <div class="liquid-glass animate-fluid" style="padding: 15px; display: flex; gap: 15px; align-items: center; border-color: rgba(255,255,255,0.03);">
+                <div style="width: 70px; height: 70px; border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);">
+                    <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
                 <img src="${item.img}" style="width: 70px; height: 70px; border-radius: 12px; object-fit: cover;">
                 <div style="flex: 1;">
                     <h4 style="font-size: 14px; font-weight: 600; color: #fff;">${item.name}</h4>
@@ -937,6 +973,7 @@ async function initApp() {
     }
     
     // Check if user already registered via bot (by tgId)
+    await fetchProducts();
     const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
     if (tgUser) {
         try {

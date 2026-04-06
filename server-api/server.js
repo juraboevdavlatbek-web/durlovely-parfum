@@ -276,6 +276,38 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // API: Upload Image (Base64)
+    if (req.url === '/api/upload' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                const { name, data } = JSON.parse(body);
+                if (!name || !data) throw new Error('Missing name or data');
+                
+                // data is base64 string: "data:image/png;base64,..."
+                const base64Data = data.replace(/^data:image\/\w+;base64,/, '');
+                const buffer = Buffer.from(base64Data, 'base64');
+                
+                const fileName = `${Date.now()}_${name}`;
+                const uploadPath = path.join(PUBLIC_DIR, 'uploads', fileName);
+                
+                fs.writeFileSync(uploadPath, buffer);
+                
+                setJSON();
+                res.end(JSON.stringify({ 
+                    success: true, 
+                    url: `/uploads/${fileName}` 
+                }));
+            } catch (err) {
+                console.error("Upload error:", err);
+                res.writeHead(400);
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
     // API: Customers - Check by tgId
     if (req.url.startsWith('/api/customers/check/') && req.method === 'GET') {
         const tgId = parseInt(req.url.split('/').pop());
