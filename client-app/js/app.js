@@ -32,9 +32,8 @@ const pages = {
             <!-- Premium Header (v3.0) -->
             <header style="padding: 20px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: rgba(12, 10, 9, 0.8); backdrop-filter: blur(20px); z-index: 100;">
                 <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,0.6); cursor: pointer;">
-                    <i class="fa-solid fa-gem" style="color: #a16207; font-size: 14px;"></i>
+                    <div class="mini-pearl"></div>
                     <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
-                    <i class="fa-solid fa-gem" style="color: #3b82f6; font-size: 14px;"></i>
                 </div>
                 <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
                 <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
@@ -1060,34 +1059,38 @@ window.showDurHistory = function() {
     const userAuth = localStorage.getItem('durlovely_user_auth');
     if (!userAuth) return;
 
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.style.display = 'flex';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-
-    const customer = allCustomers.find(c => c.phone === userAuth || c.tgId == userAuth);
+    const customer = allCustomers.find(c => c.phone === userAuth || (c.tgId && c.tgId == userAuth));
     const history = (customer && customer.durHistory) ? customer.durHistory : [];
 
-    modal.innerHTML = `
-        <div class="modal-content animate-fluid" style="background: #111; max-height: 70vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h3 class="luxury-text gold-text" style="font-size: 1.6rem;">Dur Tarixi</h3>
-                <i class="fa-solid fa-xmark" onclick="this.closest('.modal-overlay').remove()" style="color: #444; cursor: pointer;"></i>
+    const pageContent = document.getElementById('page-content');
+    pageContent.innerHTML = `
+        <div class="animate-fluid" style="padding: 20px; padding-bottom: 120px;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 35px;">
+                <i class="fa-solid fa-arrow-left" onclick="navigate('home')" style="font-size: 20px; color: #fff; cursor: pointer;"></i>
+                <h2 class="luxury-text gold-text" style="font-size: 2rem;">Dur Tarixi</h2>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 15px;">
+            
+            <div class="liquid-glass" style="padding: 25px; border-radius: 28px; margin-bottom: 30px; text-align: center; background: linear-gradient(135deg, rgba(28,25,23,1), rgba(161,98,7,0.1));">
+                <div class="mini-pearl" style="width: 30px; height: 30px; margin-bottom: 15px;"></div>
+                <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px;">Umumiy Balans</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: #fff;">${(customer && customer.dur ? customer.dur : 0).toFixed(1)} <span style="font-size: 1rem; color: var(--accent);">💎</span></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
                 ${history.length > 0 ? history.map(h => `
-                    <div class="liquid-glass" style="padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-size: 14px; font-weight: 600; color: #fff;">${h.reason}</div>
-                            <div style="font-size: 11px; color: #555; margin-top: 4px;">${h.date}</div>
+                    <div class="liquid-glass" style="padding: 18px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; border-color: rgba(255,255,255,0.03);">
+                        <div style="flex: 1;">
+                            <div style="font-size: 15px; font-weight: 600; color: #fff;">${h.reason}</div>
+                            <div style="font-size: 11px; color: #444; margin-top: 4px; font-weight: 300;">${h.date}</div>
                         </div>
-                        <div style="font-weight: 800; color: var(--accent);">+${h.amount} 💎</div>
+                        <div style="font-weight: 800; color: ${h.amount > 0 ? 'var(--accent)' : '#ef4444'}; font-size: 15px;">
+                            ${h.amount > 0 ? '+' : ''}${h.amount} <small style="font-size: 10px; font-weight: 400; opacity: 0.7;">💎</small>
+                        </div>
                     </div>
-                `).join('') : '<div style="text-align: center; color: #444; padding: 40px;">Sizda hali bonuslar yo\'q</div>'}
+                `).join('') : '<div style="text-align: center; color: #444; padding: 60px;">Sizda hali bonuslar tarixi mavjud emas</div>'}
             </div>
         </div>
     `;
-    document.body.appendChild(modal);
 };
 
 window.showNotifications = function() {
