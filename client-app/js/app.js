@@ -1111,6 +1111,13 @@ async function initApp() {
 
     const userAuth = localStorage.getItem('durlovely_user_auth');
     if (userAuth) {
+        // Hide onboarding, show main app
+        ageGate.classList.add('hide');
+        securityScreen.classList.add('hide');
+        authScreen.classList.add('hide');
+        birthdayScreen.classList.add('hide');
+        mainApp.classList.remove('hide');
+
         const customer = allCustomers.find(c => c.phone === userAuth || c.tgId == userAuth);
         if (customer) {
             localStorage.setItem('durlovely_vip_status', customer.isVip ? 'true' : 'false');
