@@ -148,7 +148,7 @@ const server = http.createServer(async (req, res) => {
     const setJSON = () => res.setHeader('Content-Type', 'application/json');
 
     // API: Image Upload
-    if (req.url === '/api/upload' && req.method === 'POST') {
+    if (req.url.startsWith('/api/upload') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', () => {
@@ -189,7 +189,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    if (req.url === '/api/products' && req.method === 'POST') {
+    if (req.url.startsWith('/api/products') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
@@ -310,7 +310,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    if (req.url === '/api/orders' && req.method === 'POST') {
+    if (req.url.startsWith('/api/orders') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
@@ -356,7 +356,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API: Customers
-    if (req.url === '/api/customers/claim-reward' && req.method === 'POST') {
+    if (req.url.startsWith('/api/customers/claim-reward') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
@@ -438,7 +438,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    if (req.url === '/api/customers' && req.method === 'POST') {
+    if (req.url.startsWith('/api/customers') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
@@ -476,7 +476,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    if (req.url === '/api/notifications' && req.method === 'POST') {
+    if (req.url.startsWith('/api/notifications') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
