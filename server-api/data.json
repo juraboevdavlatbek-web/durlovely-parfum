@@ -46,6 +46,15 @@
       "stock": 10,
       "id": 1775389025526,
       "image": ""
+    },
+    {
+      "name": "axis y",
+      "price": 150000,
+      "vip_price": 140000,
+      "category": "Gold Collection",
+      "stock": 20,
+      "image": "",
+      "id": 1775448916737
     }
   ],
   "customers": [

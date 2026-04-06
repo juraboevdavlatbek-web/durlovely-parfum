@@ -624,7 +624,7 @@ window.requestTelegramContact = function() {
             
             const tgId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 737113132;
             
-            fetch('http://localhost:3000/api/customers', {
+            fetch(`${API_BASE}/customers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: phone, tgId: tgId, firstName: tg.initDataUnsafe.user?.first_name || '' })
@@ -660,7 +660,7 @@ window.verifyPhone = async function() {
     const tgId = (tg && tg.initDataUnsafe?.user) ? tg.initDataUnsafe.user.id : 737113132;
     
     try {
-        const res = await fetch('http://localhost:3000/api/customers', {
+        const res = await fetch(`${API_BASE}/customers`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phone: fullPhone, tgId: tgId })
@@ -1041,6 +1041,7 @@ window.submitOrder = async function() {
 
 // Initial Setup
 async function initApp() {
+    await fetchProducts();
     const userAuth = localStorage.getItem('durlovely_user_auth');
     
     if (userAuth) {
@@ -1055,7 +1056,6 @@ async function initApp() {
     }
     
     // Check if user already registered via bot (by tgId)
-    await fetchProducts();
     const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
     if (tgUser) {
         try {
