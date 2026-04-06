@@ -103,6 +103,24 @@
         .status-pending { background: rgba(161,98,7,0.1); color: var(--accent); }
         .status-delivered { background: rgba(34,197,94,0.1); color: #22c55e; }
         .status-cancelled { background: rgba(239,68,68,0.1); color: #ef4444; }
+        .status-blocked { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+
+        .action-btn {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
 
         .dashboard-card {
             padding: 35px;
@@ -551,14 +569,19 @@
                                     <td><div style="font-size: 13px; color: #888;">${c.tgId || '—'}</div></td>
                                     <td><div style="font-size: 13px; color: #888;">${c.dateJoined || '—'}</div></td>
                                     <td>
-                                        <span class="status-badge ${c.isVip ? 'status-delivered' : 'status-pending'}">
-                                            ${c.isVip ? '👑 VIP' : 'Oddiy'}
+                                        <span class="status-badge ${c.isBlocked ? 'status-blocked' : (c.isVip ? 'status-delivered' : 'status-pending')}">
+                                            ${c.isBlocked ? '🚫 BLOKANGAN' : (c.isVip ? '👑 VIP' : 'Oddiy')}
                                         </span>
                                     </td>
-                                    <td style="text-align: right;">
-                                        <button onclick="toggleVip(${c.id})" class="liquid-glass" style="padding: 10px 20px; border-radius: 14px; font-size: 12px; font-weight: 700; color: ${c.isVip ? '#ef4444' : 'var(--accent)'}; border-color: ${c.isVip ? 'rgba(239,68,68,0.15)' : 'rgba(161,98,7,0.15)'}; cursor: pointer; transition: 0.2s;">
-                                            <i class="fa-solid ${c.isVip ? 'fa-crown-simple' : 'fa-crown'}" style="margin-right: 6px;"></i>
-                                            ${c.isVip ? 'VIP OLISH' : 'VIP BERISH'}
+                                    <td style="text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
+                                        <button onclick="toggleVip(${c.id})" class="liquid-glass action-btn" style="color: ${c.isVip ? '#ef4444' : 'var(--accent)'}; border-color: ${c.isVip ? 'rgba(239,68,68,0.1)' : 'rgba(161,98,7,0.1)'};">
+                                            <i class="fa-solid ${c.isVip ? 'fa-crown-slash' : 'fa-crown'}"></i>
+                                        </button>
+                                        <button onclick="toggleBlock(${c.id}, ${c.isBlocked || false})" class="liquid-glass action-btn" style="color: ${c.isBlocked ? 'var(--accent)' : '#f59e0b'}; border-color: ${c.isBlocked ? 'rgba(161,98,7,0.1)' : 'rgba(245,158,11,0.1)'};" title="${c.isBlocked ? 'Blokdan ochish' : 'Bloklash'}">
+                                            <i class="fa-solid ${c.isBlocked ? 'fa-user-check' : 'fa-user-slash'}"></i>
+                                        </button>
+                                        <button onclick="deleteCustomer(${c.id})" class="liquid-glass action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.1);" title="O'chirish">
+                                            <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -603,11 +626,45 @@
             showConfirm(`${action}ni xohlaysizmi?`, async (isOk) => {
                 if (!isOk) return;
                 try {
-                    const res = await fetch(`${API_BASE}/customers/${customerId}/vip`, { method: 'POST' });
+                    const res = await fetch(`${API_BASE}/customers/${customerId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ isVip: !customer.isVip })
+                    });
                     if (res.ok) {
                         await fetchData();
                         renderView(state.currentView);
-                        showAlert(customer.isVip ? "VIP status berildi! ✅" : "VIP status olindi");
+                    }
+                } catch (e) { showAlert("Xatolik yuz berdi"); }
+            });
+        }
+
+        async function toggleBlock(customerId, currentStatus) {
+            const action = currentStatus ? "blokdan chiqarmoqchimisiz?" : "bloklamoqchimisiz?";
+            showConfirm(`Haqiqatdan ham ushbu mijozni ${action}`, async (isOk) => {
+                if (!isOk) return;
+                try {
+                    const res = await fetch(`${API_BASE}/customers/${customerId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ isBlocked: !currentStatus })
+                    });
+                    if (res.ok) {
+                        await fetchData();
+                        renderView(state.currentView);
+                    }
+                } catch (e) { showAlert("Xatolik yuz berdi"); }
+            });
+        }
+
+        async function deleteCustomer(id) {
+            showConfirm("Haqiqatdan ham ushbu mijozni butunlay o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi!", async (isOk) => {
+                if (!isOk) return;
+                try {
+                    const res = await fetch(`${API_BASE}/customers/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        await fetchData();
+                        renderView(state.currentView);
                     }
                 } catch (e) { showAlert("Xatolik yuz berdi"); }
             });

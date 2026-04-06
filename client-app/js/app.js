@@ -633,13 +633,19 @@ window.requestTelegramContact = function() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: phone, tgId: tgId, firstName: tg.initDataUnsafe.user?.first_name || '' })
-            }).then(res => {
-                if (res.ok) {
+            }).then(res => res.json()).then(result => {
+                if (result.blocked) {
+                    showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
+                    return;
+                }
+                if (result.success || result.ok) { // Added result.ok for backward compatibility if needed
                     localStorage.setItem('durlovely_user_auth', phone);
                     authScreen.classList.add('hide');
                     birthdayScreen.classList.remove('hide');
                     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
                 }
+            }).catch(e => {
+                // Ignore network errors silently for now or handle them
             });
         }
     });
@@ -677,7 +683,15 @@ window.verifyPhone = async function() {
             body: JSON.stringify({ phone: fullPhone, tgId: tgId })
         });
         
-        if (res.ok) {
+        const result = await res.json();
+        if (result.blocked) {
+            showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
+            btn.innerText = oldText;
+            btn.disabled = false;
+            return;
+        }
+
+        if (result.success) {
             localStorage.setItem('durlovely_user_auth', fullPhone);
             authScreen.classList.add('hide');
             birthdayScreen.classList.remove('hide');
@@ -1118,10 +1132,19 @@ async function initApp() {
             if (userAuth) {
                 const res = await fetch(`${API_BASE}/customers/check/phone/${userAuth}`);
                 const result = await res.json();
+                if (result.blocked) {
+                    showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
+                    localStorage.removeItem('durlovely_user_auth');
+                    return;
+                }
                 if (result.found) customer = result.customer;
             } else if (tgUser) {
                 const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}`);
                 const result = await res.json();
+                if (result.blocked) {
+                    showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
+                    return;
+                }
                 if (result.found) {
                     customer = result.customer;
                     localStorage.setItem('durlovely_user_auth', customer.phone);

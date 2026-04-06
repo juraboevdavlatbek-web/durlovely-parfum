@@ -349,16 +349,47 @@ const server = http.createServer(async (req, res) => {
     if (req.url.startsWith('/api/customers/check/phone/') && req.method === 'GET') {
         const phone = req.url.split('/').pop().replace(/[^\d]/g, '');
         const result = await dbRequest('findOne', 'customers', { filter: { phone: { $regex: phone } } });
+        const customer = result.document;
         setJSON();
-        res.end(JSON.stringify({ found: !!result.document, customer: result.document }));
+        if (customer && customer.isBlocked) {
+            res.end(JSON.stringify({ found: true, blocked: true }));
+            return;
+        }
+        res.end(JSON.stringify({ found: !!customer, customer }));
         return;
     }
 
     if (req.url.startsWith('/api/customers/check/') && req.method === 'GET') {
         const tgId = parseInt(req.url.split('/').pop());
         const result = await dbRequest('findOne', 'customers', { filter: { tgId: tgId } });
+        const customer = result.document;
         setJSON();
-        res.end(JSON.stringify({ found: !!result.document, customer: result.document }));
+        if (customer && customer.isBlocked) {
+            res.end(JSON.stringify({ found: true, blocked: true }));
+            return;
+        }
+        res.end(JSON.stringify({ found: !!customer, customer }));
+        return;
+    }
+
+    if (req.url.startsWith('/api/customers/') && (req.method === 'PUT' || req.method === 'POST' && req.url.includes('update'))) {
+        const id = parseInt(req.url.split('/')[3]);
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            const update = JSON.parse(body);
+            await dbRequest('updateOne', 'customers', { filter: { id: id }, update: { $set: update } });
+            setJSON();
+            res.end(JSON.stringify({ success: true }));
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/api/customers/') && req.method === 'DELETE') {
+        const id = parseInt(req.url.split('/')[3]);
+        await dbRequest('deleteOne', 'customers', { filter: { id: id } });
+        setJSON();
+        res.end(JSON.stringify({ success: true }));
         return;
     }
 
@@ -374,18 +405,27 @@ const server = http.createServer(async (req, res) => {
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
             const customer = JSON.parse(body);
-            const search = await dbRequest('findOne', 'customers', { filter: { phone: customer.phone } });
+            // Check by phone or tgId
+            const filter = customer.tgId ? { $or: [{ phone: customer.phone }, { tgId: customer.tgId }] } : { phone: customer.phone };
+            const search = await dbRequest('findOne', 'customers', { filter });
+            
+            setJSON();
+            if (search.document && search.document.isBlocked) {
+                res.end(JSON.stringify({ success: false, blocked: true }));
+                return;
+            }
+
             if (!search.document) {
                 customer.id = Date.now();
                 customer.dateJoined = new Date().toLocaleDateString();
                 customer.dur = 0;
                 customer.durHistory = [];
                 customer.isVip = false;
+                customer.isBlocked = false;
                 await dbRequest('insertOne', 'customers', { document: customer });
             } else if (customer.tgId) {
-                await dbRequest('updateOne', 'customers', { filter: { phone: customer.phone }, update: { $set: { tgId: customer.tgId } } });
+                await dbRequest('updateOne', 'customers', { filter: { id: search.document.id }, update: { $set: { tgId: customer.tgId } } });
             }
-            setJSON();
             res.end(JSON.stringify({ success: true }));
         });
         return;
