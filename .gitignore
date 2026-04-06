@@ -1,0 +1,5 @@
+node_modules/
+server-api/node-js/
+.DS_Store
+*.log
+.env
