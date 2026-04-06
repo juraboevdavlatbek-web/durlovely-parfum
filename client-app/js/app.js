@@ -1138,6 +1138,10 @@ async function initApp() {
                     return;
                 }
                 if (result.found) customer = result.customer;
+                else {
+                    // Account was deleted from admin panel! Wipe out local state so it stops logging them in
+                    localStorage.removeItem('durlovely_user_auth');
+                }
             } else if (tgUser) {
                 const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}`);
                 const result = await res.json();
@@ -1148,6 +1152,8 @@ async function initApp() {
                 if (result.found) {
                     customer = result.customer;
                     localStorage.setItem('durlovely_user_auth', customer.phone);
+                } else {
+                    localStorage.removeItem('durlovely_user_auth');
                 }
             }
 
