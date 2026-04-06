@@ -258,6 +258,12 @@ const server = http.createServer(async (req, res) => {
                 let phone = contact.phone_number || '';
                 if (!phone.startsWith('+')) phone = '+' + phone;
                 
+                if (!phone.startsWith('+998')) {
+                    sendTelegramMessage(chatId, `❌ <b>Xatolik!</b>\n\nKechirasiz, loyiha hozircha faqat O'zbekiston hududida faoliyat olib boradi. Faqat <b>+998</b> raqamlari qabul qilinadi.`);
+                    res.end('ok');
+                    return;
+                }
+                
                 const search = await dbRequest('findOne', 'customers', { filter: { phone: phone } });
                 if (!search.document) {
                     const customer = {
