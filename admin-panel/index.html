@@ -281,8 +281,11 @@
         }
 
         function showConfirm(msg, callback) {
-            if (tg && tg.showConfirm) tg.showConfirm(msg, callback);
-            else callback(confirm(msg));
+            if (tg && tg.showConfirm && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+                tg.showConfirm(msg, callback);
+            } else {
+                callback(confirm(msg));
+            }
         }
 
         const state = {
