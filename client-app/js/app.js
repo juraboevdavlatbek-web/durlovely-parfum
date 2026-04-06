@@ -584,7 +584,7 @@ function successSecurity() {
 
 // 2.5 Auth - Native Telegram Share Contact
 function showAuthScreen() {
-    authScreen.classList.remove('hide');
+    showScreen('auth-screen');
     const phoneStep = document.getElementById('phone-step');
     
     // If inside Telegram, use native requestContact
