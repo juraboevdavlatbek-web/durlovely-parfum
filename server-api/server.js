@@ -329,17 +329,53 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // Static Files
+    // Static Files Handling
     const PUBLIC_DIR = path.join(__dirname, '..');
-    let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'client-app/index.html' : req.url);
-    if (!fs.existsSync(filePath)) {
-        filePath = path.join(PUBLIC_DIR, req.url.startsWith('/admin') ? 'admin-panel/index.html' : 'client-app/index.html');
+    const mimeTypes = {
+        '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
+        '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
+        '.svg': 'image/svg+xml', '.webp': 'image/webp', '.ico': 'image/x-icon'
+    };
+
+    let requestedPath = req.url.split('?')[0];
+    let possiblePaths = [
+        path.join(PUBLIC_DIR, requestedPath),
+        path.join(PUBLIC_DIR, 'client-app', requestedPath),
+        path.join(PUBLIC_DIR, 'admin-panel', requestedPath)
+    ];
+
+    let finalPath = null;
+    for (let p of possiblePaths) {
+        if (fs.existsSync(p)) {
+            if (fs.statSync(p).isDirectory()) {
+                let indexP = path.join(p, 'index.html');
+                if (fs.existsSync(indexP)) { finalPath = indexP; break; }
+            } else {
+                finalPath = p; break;
+            }
+        }
     }
-    const ext = path.extname(filePath);
-    const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg' };
-    fs.readFile(filePath, (err, content) => {
-        if (err) { res.writeHead(404); res.end('Not Found'); }
-        else { res.writeHead(200, { 'Content-Type': mime[ext] || 'text/plain' }); res.end(content); }
+
+    // SPA Fallback
+    if (!finalPath) {
+        if (requestedPath.startsWith('/admin')) {
+            finalPath = path.join(PUBLIC_DIR, 'admin-panel/index.html');
+        } else {
+            finalPath = path.join(PUBLIC_DIR, 'client-app/index.html');
+        }
+    }
+
+    const ext = path.extname(finalPath).toLowerCase();
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    fs.readFile(finalPath, (error, content) => {
+        if (error) {
+            res.writeHead(404);
+            res.end('Not Found');
+        } else {
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(content, 'utf-8');
+        }
     });
 });
 
