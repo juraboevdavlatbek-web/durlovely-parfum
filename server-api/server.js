@@ -147,6 +147,40 @@ const server = http.createServer(async (req, res) => {
 
     const setJSON = () => res.setHeader('Content-Type', 'application/json');
 
+    // API: Image Upload
+    if (req.url === '/api/upload' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const { name, data } = JSON.parse(body);
+                // Extract base64 data (remove "data:image/png;base64,")
+                const base64Data = data.replace(/^data:image\/\w+;base64,/, "");
+                const ext = name.split('.').pop();
+                const fileName = `upload_${Date.now()}.${ext}`;
+                const uploadDir = path.join(__dirname, '..', 'shared-assets', 'assets', 'images');
+                
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                
+                fs.writeFileSync(path.join(uploadDir, fileName), base64Data, 'base64');
+                
+                setJSON();
+                res.end(JSON.stringify({ 
+                    success: true, 
+                    url: `../shared-assets/assets/images/${fileName}` 
+                }));
+            } catch (err) {
+                console.error("Upload error:", err);
+                setJSON();
+                res.writeHead(500);
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
     // API: Products
     if (req.url.startsWith('/api/products') && req.method === 'GET') {
         const result = await dbRequest('find', 'products');
