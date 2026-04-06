@@ -26,36 +26,52 @@ function sendTelegramMessage(chatId, text) {
     req.end();
 }
 
+const { MongoClient } = require('mongodb');
 const PORT = process.env.PORT || 3000;
-const DATA_API_URL = process.env.MONGODB_API_URL;
-const DATA_API_KEY = process.env.MONGODB_API_KEY;
-const DATA_SOURCE = process.env.MONGODB_DATA_SOURCE || 'Cluster0';
-const DATABASE = 'durlovely';
+const MONGODB_URI = process.env.MONGODB_URI;
+const DATABASE_NAME = 'durlovely';
+let client;
 
-async function dbRequest(action, collection, body = {}) {
-    if (!DATA_API_URL || !DATA_API_KEY) {
-        return localDbFallback(action, collection, body);
+async function getDb() {
+    if (!client) {
+        client = new MongoClient(MONGODB_URI);
+        await client.connect();
     }
-    return new Promise((resolve, reject) => {
-        const url = `${DATA_API_URL}/action/${action}`;
-        const options = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'api-key': DATA_API_KEY,
-            }
-        };
-        const req = https.request(url, options, (res) => {
-            let data = '';
-            res.on('data', d => data += d);
-            res.on('end', () => {
-                try { resolve(JSON.parse(data)); } catch(e) { resolve({ documents: [] }); }
-            });
-        });
-        req.on('error', reject);
-        req.write(JSON.stringify({ dataSource: DATA_SOURCE, database: DATABASE, collection: collection, ...body }));
-        req.end();
-    });
+    return client.db(DATABASE_NAME);
+}
+
+async function dbRequest(action, collectionName, body = {}) {
+    if (!MONGODB_URI) {
+        return localDbFallback(action, collectionName, body);
+    }
+    try {
+        const db = await getDb();
+        const collection = db.collection(collectionName);
+        if (action === 'find') {
+            const docs = await collection.find(body.filter || {}).toArray();
+            return { documents: docs };
+        }
+        if (action === 'findOne') {
+            const doc = await collection.findOne(body.filter || {});
+            return { document: doc };
+        }
+        if (action === 'insertOne') {
+            const result = await collection.insertOne(body.document);
+            return { insertedId: result.insertedId };
+        }
+        if (action === 'updateOne') {
+            const result = await collection.updateOne(body.filter, body.update);
+            return { modifiedCount: result.modifiedCount };
+        }
+        if (action === 'deleteOne') {
+            const result = await collection.deleteOne(body.filter);
+            return { deletedCount: result.deletedCount };
+        }
+    } catch (e) {
+        console.error("DB Error:", e);
+        return { documents: [], document: null };
+    }
+    return { documents: [] };
 }
 
 function localDbFallback(action, collection, body) {
@@ -81,6 +97,29 @@ function localDbFallback(action, collection, body) {
     return { documents: [] };
 }
 ;
+
+async function autoMigrate() {
+    if (!MONGODB_URI) return;
+    try {
+        const db = await getDb();
+        const productsCount = await db.collection('products').countDocuments();
+        if (productsCount === 0) {
+            const DATA_FILE = path.join(__dirname, 'data.json');
+            if (fs.existsSync(DATA_FILE)) {
+                console.log("🚛 Starting Auto-Migration to Atlas...");
+                const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+                if (data.products?.length) await db.collection('products').insertMany(data.products);
+                if (data.categories?.length) await db.collection('categories').insertMany(data.categories.map(c => ({ name: c })));
+                if (data.customers?.length) await db.collection('customers').insertMany(data.customers);
+                if (data.orders?.length) await db.collection('orders').insertMany(data.orders);
+                if (data.notifications?.length) await db.collection('notifications').insertMany(data.notifications);
+                console.log("✅ Auto-Migration Complete!");
+            }
+        }
+    } catch (e) {
+        console.error("Migration Error:", e);
+    }
+}
 
 const server = http.createServer(async (req, res) => {
     // CORS headers
@@ -379,4 +418,6 @@ const server = http.createServer(async (req, res) => {
     });
 });
 
-server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+autoMigrate().then(() => {
+    server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+});
