@@ -147,6 +147,13 @@ const server = http.createServer(async (req, res) => {
 
     const setJSON = () => res.setHeader('Content-Type', 'application/json');
 
+    // Anti-Sleep Keep-Alive Endpoint
+    if (req.url.startsWith('/api/ping') && req.method === 'GET') {
+        setJSON();
+        res.end(JSON.stringify({ status: 'AESTHETICALLY_ACTIVE', time: new Date().toISOString() }));
+        return;
+    }
+
     // API: Image Upload
     if (req.url.startsWith('/api/upload') && req.method === 'POST') {
         let body = '';
@@ -550,5 +557,15 @@ const server = http.createServer(async (req, res) => {
 });
 
 autoMigrate().then(() => {
-    server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+    server.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}`);
+        
+        // Anti-Sleep Keep-Alive: Self-ping every 14 minutes
+        const RENDER_URL = 'https://durlovely-parfum-api.onrender.com/api/ping';
+        setInterval(() => {
+            https.get(RENDER_URL, (res) => {
+                console.log(`📡 Keep-alive ping sent: ${res.statusCode}`);
+            }).on('error', (e) => console.error("Keep-alive Ping Error:", e));
+        }, 14 * 60 * 1000);
+    });
 });
