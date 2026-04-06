@@ -620,7 +620,7 @@ window.saveBirthday = function() {
 // 2.8 Likes / Favorites System
 function getLikes() {
     try { return JSON.parse(localStorage.getItem('durlovely_likes') || '[]'); }
-    catch { return []; }
+    catch(e) { return []; }
 }
 
 function isLiked(id) {
@@ -787,10 +787,7 @@ window.showProductDetail = function(id) {
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 };
 
-window.toggleLike = function(id) {
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-    showAlert(`Mahsulot #${id} sevimlilarga qo'shildi!`);
-};
+// toggleLike is already defined in Likes system (line 630)
 
 window.addToCart = function(id) {
     const product = allProducts.find(p => p.id === id);
