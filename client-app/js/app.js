@@ -121,7 +121,22 @@ const pages = {
             </div>
         </div>
     `,
-    likes: '<div class="animate-fluid" style="padding: 30px;"><h2 class="luxury-text" style="font-size: 1.8rem;">💖 Sevimlilar</h2><p style="margin-top: 15px; font-weight: 300; color: #666;">Sizga yoqqan iforlar shu yerda to\'planadi.</p></div>',
+    likes: `
+        <div class="animate-fluid" style="padding-bottom: 120px;">
+            <div style="padding: 25px 20px 10px;">
+                <h2 class="luxury-text gold-text" style="font-size: 2rem; margin-bottom: 5px;">💖 Sevimlilar</h2>
+                <p id="likes-count" style="font-size: 13px; color: #666; margin-bottom: 20px;">0 ta mahsulot</p>
+            </div>
+            <div id="likes-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 15px;">
+            </div>
+            <div id="likes-empty" style="text-align: center; padding: 60px 0; display: none;">
+                <i class="fa-regular fa-heart" style="font-size: 50px; color: #333; margin-bottom: 20px; display: block;"></i>
+                <p style="color: #666; margin-bottom: 5px;">Hali sevimli mahsulot yo'q</p>
+                <p style="color: #444; font-size: 13px; margin-bottom: 25px;">Katalogdagi ❤️ tugmasini bosing</p>
+                <button class="btn-primary" style="padding: 12px 30px;" onclick="navigate('catalog')">KATALOGGA</button>
+            </div>
+        </div>
+    `,
     cart: `
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <div id="cart-items-section" style="padding: 25px 20px;">
@@ -150,12 +165,20 @@ const pages = {
                     <label style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 5px; display: block;">Viloyat / Shahar</label>
                     <select id="region" class="date-input" style="width: 100%; margin-bottom: 20px; text-align: left; background: #000;">
                         <option value="">Tanlang...</option>
-                        <option value="toshkent">Toshkent sh.</option>
-                        <option value="toshkent_v">Toshkent vil.</option>
+                        <option value="toshkent">Toshkent shahri</option>
+                        <option value="toshkent_v">Toshkent viloyati</option>
                         <option value="andijon">Andijon</option>
+                        <option value="buxoro">Buxoro</option>
                         <option value="fargona">Farg'ona</option>
+                        <option value="jizzax">Jizzax</option>
+                        <option value="xorazm">Xorazm</option>
                         <option value="namangan">Namangan</option>
-                        <!-- Other regions -->
+                        <option value="navoiy">Navoiy</option>
+                        <option value="qashqadaryo">Qashqadaryo</option>
+                        <option value="samarqand">Samarqand</option>
+                        <option value="sirdaryo">Sirdaryo</option>
+                        <option value="surxondaryo">Surxondaryo</option>
+                        <option value="qoraqalpog">Qoraqalpog'iston</option>
                     </select>
 
                     <label style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 5px; display: block;">Aniq Manzil (Tuman, ko'cha, uy)</label>
@@ -308,6 +331,11 @@ window.navigate = async function(page) {
     // Initialize Catalog if navigating to it
     if (page === 'catalog') {
         searchProducts('');
+    }
+
+    // Initialize Likes page
+    if (page === 'likes') {
+        renderLikes();
     }
     
     // Initialize Cart if navigating to it
@@ -589,7 +617,63 @@ window.saveBirthday = function() {
     if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 };
 
-// 2.8 Catalog & Search Logic
+// 2.8 Likes / Favorites System
+function getLikes() {
+    try { return JSON.parse(localStorage.getItem('durlovely_likes') || '[]'); }
+    catch { return []; }
+}
+
+function isLiked(id) {
+    return getLikes().includes(id);
+}
+
+window.toggleLike = function(id) {
+    let likes = getLikes();
+    if (likes.includes(id)) {
+        likes = likes.filter(x => x !== id);
+    } else {
+        likes.push(id);
+    }
+    localStorage.setItem('durlovely_likes', JSON.stringify(likes));
+    
+    // Re-render current page to update heart icons
+    const current = document.querySelector('.nav-item.active span');
+    if (current) {
+        const pageName = current.innerText.toLowerCase();
+        if (pageName.includes('catalog') || pageName.includes('katalog')) {
+            const query = document.getElementById('catalog-search');
+            searchProducts(query ? query.value : '');
+        } else if (pageName.includes('likes') || pageName.includes('sevimli')) {
+            renderLikes();
+        } else {
+            // Re-render home product grid
+            const homeGrid = document.getElementById('home-product-grid');
+            if (homeGrid) homeGrid.innerHTML = allProducts.slice(0, 4).map(p => renderProductCard(p)).join('');
+        }
+    }
+    
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+};
+
+function renderLikes() {
+    const likes = getLikes();
+    const likedProducts = allProducts.filter(p => likes.includes(p.id));
+    const grid = document.getElementById('likes-grid');
+    const empty = document.getElementById('likes-empty');
+    const count = document.getElementById('likes-count');
+    
+    if (count) count.textContent = `${likedProducts.length} ta mahsulot`;
+    
+    if (likedProducts.length === 0) {
+        if (grid) grid.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+    } else {
+        if (empty) empty.style.display = 'none';
+        if (grid) grid.innerHTML = likedProducts.map(p => renderProductCard(p)).join('');
+    }
+}
+
+// 2.9 Catalog & Search Logic
 const allProducts = [
     { id: 1, name: "Amber Gold", type: "Eau de Parfum", gender: "Uniseks", price: "450,000", vip: "380,000", img: "../shared-assets/assets/images/amber_gold.png", audio: true, desc: "Sharqona va iliq ifor. Mushk va ambra uyg'unligi." },
     { id: 2, name: "Durlovely Signature", type: "Signature Scent", gender: "Ayollar", price: "520,000", vip: "440,000", img: "../shared-assets/assets/images/logo.png", audio: true, desc: "Brendimizning o'ziga xos hidi. Gulli va mevali notalar." },
@@ -633,8 +717,8 @@ function renderProductCard(p) {
                         <i class="fa-solid fa-volume-high"></i>
                     </button>
                 ` : ''}
-                <div onclick="event.stopPropagation(); toggleLike(${p.id})" style="position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px;">
-                    <i class="fa-regular fa-heart"></i>
+                <div onclick="event.stopPropagation(); toggleLike(${p.id})" style="position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; color: ${isLiked(p.id) ? '#ef4444' : '#fff'}; font-size: 14px; cursor: pointer;">
+                    <i class="fa-${isLiked(p.id) ? 'solid' : 'regular'} fa-heart"></i>
                 </div>
             </div>
             <h4 style="font-size: 14px; font-weight: 600; color: #fff; font-family: 'Montserrat', sans-serif;">${p.name}</h4>

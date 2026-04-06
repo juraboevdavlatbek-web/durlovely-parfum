@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BOT_TOKEN = '8060468556:AAFdv3dQ7kL-9BrAlx0HjFWfj4H9fIDFAeE';
-const ADMIN_CHAT_ID = 'YOUR_ADMIN_CHAT_ID'; // Will configure later
+const ADMIN_CHAT_ID = 737113132; // Admin Telegram chat ID
 
 // Telegram Helper
 function sendTelegramMessage(chatId, text) {
@@ -157,9 +157,13 @@ const server = http.createServer((req, res) => {
             
             // Notify customer
             if (order.tgId) {
-                const msg = `<b>DURLOVELY PARFUM</b>\n\n🛍 <b>Yangi buyurtmangiz qabul qilindi!</b>\nBuyurtma raqami: #${order.id}\nJami summa: <b>${order.total.toLocaleString()} so'm</b>\n\nTez orada menejer siz bilan aloqaga chiqadi. Xaridingiz uchun rahmat! ✨`;
+                const msg = `<b>DURLOVELY PARFUM</b>\n\n🛍 <b>Yangi buyurtmangiz qabul qilindi!</b>\nBuyurtma raqami: #${order.id}\nJami summa: <b>${order.total} so'm</b>\n\nTez orada menejer siz bilan aloqaga chiqadi. Xaridingiz uchun rahmat! ✨`;
                 sendTelegramMessage(order.tgId, msg);
             }
+            
+            // Notify admin
+            const adminMsg = `🔔 <b>YANGI BUYURTMA!</b>\n\n📦 #${order.id}\n👤 ${order.customer || 'Noma\'lum'}\n📱 ${order.phone || '—'}\n🛒 ${(order.items || []).join(', ')}\n💰 <b>${order.total || '0'} UZS</b>\n📍 ${order.address || '—'}`;
+            sendTelegramMessage(ADMIN_CHAT_ID, adminMsg);
 
             setJSON();
             res.end(JSON.stringify({ success: true, order }));
@@ -176,8 +180,21 @@ const server = http.createServer((req, res) => {
             const data = readData();
             const orderIndex = data.orders.findIndex(o => o.id == id);
             if (orderIndex !== -1) {
+                const oldStatus = data.orders[orderIndex].status;
                 data.orders[orderIndex].status = status;
                 writeData(data);
+                
+                // Notify customer about status change
+                if (data.orders[orderIndex].tgId && oldStatus !== status) {
+                    const statusText = {
+                        'pending': '⏳ Kutilmoqda',
+                        'delivered': '✅ Yetkazib berildi',
+                        'cancelled': '❌ Bekor qilindi'
+                    };
+                    const msg = `📦 <b>Buyurtma #${data.orders[orderIndex].id}</b>\n\nStatus yangilandi: <b>${statusText[status] || status}</b>`;
+                    sendTelegramMessage(data.orders[orderIndex].tgId, msg);
+                }
+                
                 setJSON();
                 res.end(JSON.stringify({ success: true, order: data.orders[orderIndex] }));
             } else {
