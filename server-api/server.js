@@ -405,9 +405,8 @@ const server = http.createServer(async (req, res) => {
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
             const customer = JSON.parse(body);
-            // Check by phone or tgId
-            const filter = customer.tgId ? { $or: [{ phone: customer.phone }, { tgId: customer.tgId }] } : { phone: customer.phone };
-            const search = await dbRequest('findOne', 'customers', { filter });
+            // Search strictly by phone so each unique number gets a distinct account
+            const search = await dbRequest('findOne', 'customers', { filter: { phone: customer.phone } });
             
             setJSON();
             if (search.document && search.document.isBlocked) {
