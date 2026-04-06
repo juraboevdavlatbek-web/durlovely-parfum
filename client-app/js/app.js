@@ -1130,7 +1130,7 @@ async function initApp() {
         try {
             let customer = null;
             if (userAuth) {
-                const res = await fetch(`${API_BASE}/customers/check/phone/${userAuth}`);
+                const res = await fetch(`${API_BASE}/customers/check/phone/${encodeURIComponent(userAuth)}?v=${Date.now()}`, { cache: 'no-store' });
                 const result = await res.json();
                 if (result.blocked) {
                     showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
@@ -1143,7 +1143,7 @@ async function initApp() {
                     localStorage.removeItem('durlovely_user_auth');
                 }
             } else if (tgUser) {
-                const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}`);
+                const res = await fetch(`${API_BASE}/customers/check/${tgUser.id}?v=${Date.now()}`, { cache: 'no-store' });
                 const result = await res.json();
                 if (result.blocked) {
                     showAlert("Hisobingiz bloklangan. Iltimos, admin bilan bog'laning.");
