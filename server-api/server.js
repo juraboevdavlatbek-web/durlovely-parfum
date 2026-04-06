@@ -135,14 +135,23 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // API: Orders (Admin)
-    if (req.url === '/api/orders' && req.method === 'GET') {
+    // API: Products - List all
+    if (req.url.startsWith('/api/products') && req.method === 'GET') {
+        const data = readData();
         setJSON();
-        res.end(JSON.stringify(readData().orders));
+        res.end(JSON.stringify(data.products || []));
         return;
     }
 
-    if (req.url === '/api/debug/data' && req.method === 'GET') {
+    // API: Orders - List all (Admin)
+    if (req.url.startsWith('/api/orders') && !req.url.includes('/my') && req.method === 'GET') {
+        const data = readData();
+        setJSON();
+        res.end(JSON.stringify(data.orders || []));
+        return;
+    }
+
+    if (req.url.startsWith('/api/debug/data') && req.method === 'GET') {
         setJSON();
         res.end(JSON.stringify(readData()));
         return;
@@ -226,14 +235,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // API: Products
-    if (req.url === '/api/products' && (req.method === 'GET')) {
-        const data = readData();
-        setJSON();
-        res.end(JSON.stringify(data.products));
-        return;
-    }
-
     if (req.url === '/api/products' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
@@ -288,9 +289,8 @@ const server = http.createServer((req, res) => {
     }
 
     // API: Categories (derived from products for now, or separate list)
-    if (req.url === '/api/categories' && req.method === 'GET') {
+    if (req.url.startsWith('/api/categories') && req.method === 'GET') {
         const data = readData();
-        // If categories doesn't exist, create from products
         const categories = data.categories || [...new Set(data.products.map(p => p.category))];
         setJSON();
         res.end(JSON.stringify(categories));
@@ -346,7 +346,7 @@ const server = http.createServer((req, res) => {
     }
 
     // API: Customers - List all
-    if (req.url === '/api/customers' && req.method === 'GET') {
+    if (req.url.startsWith('/api/customers') && !req.url.includes('/check/') && req.method === 'GET') {
         const data = readData();
         setJSON();
         res.end(JSON.stringify(data.customers || []));
