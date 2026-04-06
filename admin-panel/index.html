@@ -264,11 +264,12 @@
         }
 
         const state = {
-            view: 'dashboard',
+            currentView: 'dashboard',
             orders: [],
             products: [],
+            customers: [],
             categories: [],
-            customers: []
+            isUploading: false
         };
 
         const API_BASE = '/api';
@@ -641,6 +642,10 @@
 
         document.getElementById('product-form').onsubmit = async (e) => {
             e.preventDefault();
+            if (state.isUploading) {
+                showAlert("Rasm yuklanmoqda, iltimos kuting...");
+                return;
+            }
             const id = document.getElementById('p-id').value;
             const data = {
                 name: document.getElementById('p-name').value,
@@ -672,6 +677,13 @@
             const file = input.files[0];
             if (!file) return;
 
+            state.isUploading = true;
+            const btn = document.querySelector('#product-form button[type="button"]');
+            const oldBtnText = btn.innerText;
+            btn.innerText = "YUKLANMOQDA...";
+            btn.style.opacity = "0.5";
+            document.getElementById('image-preview').innerHTML = '<div class="premium-loader" style="transform: scale(0.5);"></div>';
+
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const base64Data = e.target.result;
@@ -693,6 +705,10 @@
                     }
                 } catch (err) {
                     showAlert("Server bilan aloqa uzildi");
+                } finally {
+                    state.isUploading = false;
+                    btn.innerText = oldBtnText;
+                    btn.style.opacity = "1";
                 }
             };
             reader.readAsDataURL(file);

@@ -172,3 +172,22 @@ h1, h2, h3, .luxury-text {
 button, a, .clickable {
     cursor: pointer;
 }
+
+/* Premium Loader */
+.premium-loader {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(161, 98, 7, 0.1);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    animation: premiumSpin 1s radial infinite;
+    margin: 20px auto;
+}
+
+@keyframes premiumSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hide { display: none !important; }
+

@@ -304,8 +304,10 @@ const server = http.createServer((req, res) => {
                 const base64Data = data.replace(/^data:image\/\w+;base64,/, '');
                 const buffer = Buffer.from(base64Data, 'base64');
                 
-                const fileName = `${Date.now()}_${name}`;
-                const uploadPath = path.join(PUBLIC_DIR, 'uploads', fileName);
+                const fileName = `${Date.now()}_${name.replace(/\s+/g, '_')}`;
+                const uploadDir = path.join(PUBLIC_DIR, 'uploads');
+                if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+                const uploadPath = path.join(uploadDir, fileName);
                 
                 fs.writeFileSync(uploadPath, buffer);
                 
@@ -425,9 +427,11 @@ const server = http.createServer((req, res) => {
         '.css': 'text/css',
         '.json': 'application/json',
         '.png': 'image/png',
-        '.jpg': 'image/jpg',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
         '.gif': 'image/gif',
         '.svg': 'image/svg+xml',
+        '.webp': 'image/webp'
     };
     const contentType = mimeTypes[extname] || 'application/octet-stream';
 
