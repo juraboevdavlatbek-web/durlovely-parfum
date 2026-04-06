@@ -345,7 +345,11 @@ window.navigate = async function(page) {
 
     if (page === 'home') {
         const homeGrid = document.getElementById('home-product-grid');
-        if (homeGrid) homeGrid.innerHTML = allProducts.slice(0, 4).map(p => renderProductCard(p)).join('');
+        if (homeGrid && allProducts.length > 0) {
+            // Show latest 4 products
+            const latest = [...allProducts].reverse().slice(0, 4);
+            homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
+        }
     }
 
     // Initialize Catalog if navigating to it
@@ -410,7 +414,7 @@ window.navigate = async function(page) {
             
             // Real order count
             const userPhone = localStorage.getItem('durlovely_user_auth');
-            const myOrdersRes = await fetch(`${API_BASE}/orders/my?auth=${userPhone}`);
+            const myOrdersRes = await fetch(`${API_BASE}/orders/my?auth=${userPhone}&v=${Date.now()}`);
             const myOrders = await myOrdersRes.json();
             
             const orderCountCard = document.querySelector('#page-content .animate-fluid [style*="Buyurtmalar"]').parentElement;
@@ -758,11 +762,14 @@ let allProducts = [];
 
 async function fetchProducts() {
     try {
-        const res = await fetch(`${API_BASE}/products`);
+        const res = await fetch(`${API_BASE}/products?v=${Date.now()}`);
         allProducts = await res.json();
         // If navigating to home, refresh the grid
         const homeGrid = document.getElementById('home-product-grid');
-        if (homeGrid) homeGrid.innerHTML = allProducts.slice(0, 4).map(p => renderProductCard(p)).join('');
+        if (homeGrid) {
+            const latest = [...allProducts].reverse().slice(0, 4);
+            homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
+        }
     } catch (e) {
         console.error("Fetch products error:", e);
     }

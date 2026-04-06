@@ -280,12 +280,13 @@
         }
 
         async function fetchData() {
+            const v = Date.now();
             try {
                 const [ordersRes, productsRes, categoriesRes, customersRes] = await Promise.all([
-                    fetch(`${API_BASE}/orders`),
-                    fetch(`${API_BASE}/products`),
-                    fetch(`${API_BASE}/categories`),
-                    fetch(`${API_BASE}/customers`)
+                    fetch(`${API_BASE}/orders?v=${v}`),
+                    fetch(`${API_BASE}/products?v=${v}`),
+                    fetch(`${API_BASE}/categories?v=${v}`),
+                    fetch(`${API_BASE}/customers?v=${v}`)
                 ]);
                 state.orders = await ordersRes.json();
                 state.products = await productsRes.json();

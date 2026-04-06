@@ -142,6 +142,12 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (req.url === '/api/debug/data' && req.method === 'GET') {
+        setJSON();
+        res.end(JSON.stringify(readData()));
+        return;
+    }
+
     // API: My Orders (Customer)
     if (req.url.startsWith('/api/orders/my') && req.method === 'GET') {
         const urlParams = new URL(req.url, `http://${req.headers.host}`);
