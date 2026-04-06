@@ -574,13 +574,13 @@
                                         </span>
                                     </td>
                                     <td style="text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
-                                        <button onclick="toggleVip(${c.id})" class="liquid-glass action-btn" style="color: ${c.isVip ? '#ef4444' : 'var(--accent)'}; border-color: ${c.isVip ? 'rgba(239,68,68,0.1)' : 'rgba(161,98,7,0.1)'};">
-                                            <i class="fa-solid ${c.isVip ? 'fa-crown-slash' : 'fa-crown'}"></i>
+                                        <button onclick="toggleVip('${c.id}')" class="liquid-glass action-btn" style="color: ${c.isVip ? '#ef4444' : 'var(--accent)'}; border-color: ${c.isVip ? 'rgba(239,68,68,0.1)' : 'rgba(161,98,7,0.1)'};" title="${c.isVip ? 'VIP oling' : 'VIP bering'}">
+                                            <i class="fa-solid fa-crown" style="${c.isVip ? 'opacity: 0.5;' : ''}"></i>
                                         </button>
-                                        <button onclick="toggleBlock(${c.id}, ${c.isBlocked || false})" class="liquid-glass action-btn" style="color: ${c.isBlocked ? 'var(--accent)' : '#f59e0b'}; border-color: ${c.isBlocked ? 'rgba(161,98,7,0.1)' : 'rgba(245,158,11,0.1)'};" title="${c.isBlocked ? 'Blokdan ochish' : 'Bloklash'}">
+                                        <button onclick="toggleBlock('${c.id}', ${c.isBlocked || false})" class="liquid-glass action-btn" style="color: ${c.isBlocked ? 'var(--accent)' : '#f59e0b'}; border-color: ${c.isBlocked ? 'rgba(161,98,7,0.1)' : 'rgba(245,158,11,0.1)'};" title="${c.isBlocked ? 'Blokdan ochish' : 'Bloklash'}">
                                             <i class="fa-solid ${c.isBlocked ? 'fa-user-check' : 'fa-user-slash'}"></i>
                                         </button>
-                                        <button onclick="deleteCustomer(${c.id})" class="liquid-glass action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.1);" title="O'chirish">
+                                        <button onclick="deleteCustomer('${c.id}')" class="liquid-glass action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.1);" title="O'chirish">
                                             <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </td>
