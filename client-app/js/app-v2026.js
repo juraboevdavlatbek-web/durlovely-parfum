@@ -31,9 +31,16 @@ const pages = {
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <!-- Premium Header (v3.0) -->
             <header style="padding: 20px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: rgba(12, 10, 9, 0.8); backdrop-filter: blur(20px); z-index: 100;">
-                <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,0.6); cursor: pointer;">
-                    <div class="mini-pearl"></div>
-                    <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
+                <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 12px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,1); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                    <div class="dur-shell-container" id="header-dur-shell">
+                        <div class="shell-wrapper">
+                            <div class="shell-top"></div>
+                            <div class="shell-bottom"></div>
+                            <div class="shell-pearl"></div>
+                        </div>
+                        <div class="dur-float-badge" id="dur-float-badge">+0</div>
+                    </div>
+                    <span id="dur-count" style="font-weight: 800; font-size: 18px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">0.0</span>
                 </div>
                 <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
                 <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
@@ -1268,6 +1275,13 @@ window.updateDurBox = function() {
 
     const dur = customer.dur || 0;
     const durCountEl = document.getElementById('dur-count');
+    
+    // Check for point increase
+    if (lastKnownDur !== -1 && dur > lastKnownDur) {
+        animateDurIncrease((dur - lastKnownDur).toFixed(1));
+    }
+    lastKnownDur = dur;
+
     if (durCountEl) durCountEl.innerText = dur.toFixed(1);
 
     let currentLevel = DUR_LEVELS[0];
@@ -1482,5 +1496,71 @@ async function updateClientContext(customer) {
             }
         });
 }
+
+// --- PREMIUM SHELL ANIMATION ---
+let lastKnownDur = -1;
+
+window.animateDurIncrease = function(amount) {
+    const shell = document.getElementById('header-dur-shell');
+    const badge = document.getElementById('dur-float-badge');
+    if (!shell || !badge) return;
+
+    // 1. Show Badge
+    badge.innerText = `+${amount}`;
+    badge.classList.add('show');
+
+    // 2. Open Shell
+    shell.classList.add('open');
+
+    // 3. Spawning Particles
+    const container = document.getElementById('dur-animation-container');
+    const shellRect = shell.getBoundingClientRect();
+    
+    for (let i = 0; i < 12; i++) {
+        setTimeout(() => {
+            const p = document.createElement('div');
+            p.className = 'dur-particle';
+            
+            // Start from random screen position (center-ish)
+            const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 200;
+            const startY = window.innerHeight / 2 + (Math.random() - 0.5) * 200;
+            
+            p.style.left = startX + 'px';
+            p.style.top = startY + 'px';
+            p.style.opacity = '1';
+            
+            container.appendChild(p);
+
+            // Animate to shell
+            const targetX = shellRect.left + shellRect.width / 2;
+            const targetY = shellRect.top + shellRect.height / 2;
+
+            p.animate([
+                { left: startX + 'px', top: startY + 'px', transform: 'scale(1.5)', opacity: 1 },
+                { left: targetX + 'px', top: targetY + 'px', transform: 'scale(0.2)', opacity: 0 }
+            ], {
+                duration: 800 + Math.random() * 400,
+                easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+            }).onfinish = () => p.remove();
+        }, i * 100);
+    }
+
+    // 4. Close Shell and clear badge
+    setTimeout(() => {
+        shell.classList.remove('open');
+        badge.classList.remove('show');
+    }, 4000);
+
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+};
+
+// Injection for particles container
+(function initAnimationLayer() {
+    if (!document.getElementById('dur-animation-container')) {
+        const div = document.createElement('div');
+        div.id = 'dur-animation-container';
+        document.body.appendChild(div);
+    }
+})();
 
 initApp();
