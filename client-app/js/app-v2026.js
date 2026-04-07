@@ -738,7 +738,8 @@ window.saveBirthday = function() {
         return;
     }
     
-    localStorage.setItem('durlovely_user_auth', 'GOLD_MEMBER_777');
+    // Preserve the user's auth from the previous step (fullPhone)
+    // localStorage.setItem('durlovely_user_auth', 'GOLD_MEMBER_777'); // Removed mock value
     birthdayScreen.classList.add('hide');
     mainApp.classList.remove('hide');
     navigate('home');

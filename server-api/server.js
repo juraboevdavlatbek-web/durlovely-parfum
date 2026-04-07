@@ -92,7 +92,10 @@ function localDbFallback(action, collection, body) {
     let data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     console.log(`[LOCAL-DB] Action: ${action}, Collection: ${collection}. Documents: ${data[collection]?.length || 0}`);
     if (action === 'find') return { documents: data[collection] || [] };
-    if (action === 'findOne') return { document: (data[collection] || []).find(x => x.id == body.filter?.id || x.tgId == body.filter?.tgId || x.phone == body.filter?.phone) };
+    if (action === 'findOne') {
+        if (!data[collection]) data[collection] = [];
+        return { document: (data[collection] || []).find(x => x.id == body.filter?.id || x.tgId == body.filter?.tgId || x.phone == body.filter?.phone) };
+    }
     if (action === 'insertOne') {
         if (!data[collection]) data[collection] = [];
         data[collection].push(body.document);
@@ -100,7 +103,8 @@ function localDbFallback(action, collection, body) {
         return { insertedId: body.document.id };
     }
     if (action === 'updateOne') {
-        const idx = (data[collection] || []).findIndex(x => x.id == body.filter?.id || x.phone == body.filter?.phone || x.tgId == body.filter?.tgId);
+        if (!data[collection]) data[collection] = [];
+        const idx = data[collection].findIndex(x => x.id == body.filter?.id || x.phone == body.filter?.phone || x.tgId == body.filter?.tgId);
         if (idx !== -1) {
             data[collection][idx] = { ...data[collection][idx], ...body.update.$set };
             fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
