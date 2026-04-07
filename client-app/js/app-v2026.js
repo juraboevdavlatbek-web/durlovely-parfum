@@ -31,37 +31,9 @@ const pages = {
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <!-- Premium Header (v3.0) -->
             <header style="padding: 20px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: rgba(12, 10, 9, 0.8); backdrop-filter: blur(20px); z-index: 100;">
-                <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 12px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,1); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-                    <div class="dur-shell-container" id="header-dur-shell">
-                        <div class="shell-wrapper">
-                            <!-- Scallop Shell Top -->
-                            <div class="shell-top" style="position: absolute; width: 100%; height: 100%; z-index: 2; transform-origin: bottom center;">
-                                <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-                                    <defs>
-                                        <linearGradient id="goldGradHeader" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#78350f" />
-                                            <stop offset="25%" style="stop-color:#d97706" />
-                                            <stop offset="50%" style="stop-color:#fef3c7" />
-                                            <stop offset="75%" style="stop-color:#d97706" />
-                                            <stop offset="100%" style="stop-color:#78350f" />
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M 50,95 Q 10,90 5,50 Q 5,10 50,5 Q 95,10 95,50 Q 90,90 50,95" fill="url(#goldGradHeader)" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
-                                    <path d="M 50,5 L 50,95 M 30,10 L 40,95 M 70,10 L 60,95 M 15,25 L 30,95 M 85,25 L 70,95" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" fill="none"/>
-                                </svg>
-                            </div>
-                            <!-- Scallop Shell Bottom -->
-                            <div class="shell-bottom" style="position: absolute; width: 100%; height: 100%; z-index: 1; transform: rotateX(40deg);">
-                                <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-                                    <path d="M 50,95 Q 10,90 5,50 Q 5,10 50,5 Q 95,10 95,50 Q 90,90 50,95" fill="url(#goldGradHeader)" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
-                                    <path d="M 50,5 L 50,95 M 30,10 L 40,95 M 70,10 L 60,95 M 15,25 L 30,95 M 85,25 L 70,95" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" fill="none"/>
-                                </svg>
-                            </div>
-                            <div class="shell-pearl"></div>
-                        </div>
-                        <div class="dur-float-badge" id="dur-float-badge">+0</div>
-                    </div>
-                    <span id="dur-count" style="font-weight: 800; font-size: 18px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">0.0</span>
+                <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,0.6); cursor: pointer;">
+                    <div class="mini-pearl"></div>
+                    <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
                 </div>
                 <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
                 <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
@@ -1517,71 +1489,5 @@ async function updateClientContext(customer) {
             }
         });
 }
-
-// --- PREMIUM SHELL ANIMATION ---
-let lastKnownDur = -1;
-
-window.animateDurIncrease = function(amount) {
-    const shell = document.getElementById('header-dur-shell');
-    const badge = document.getElementById('dur-float-badge');
-    if (!shell || !badge) return;
-
-    // 1. Show Badge
-    badge.innerText = `+${amount}`;
-    badge.classList.add('show');
-
-    // 2. Open Shell
-    shell.classList.add('open');
-
-    // 3. Spawning Particles
-    const container = document.getElementById('dur-animation-container');
-    const shellRect = shell.getBoundingClientRect();
-    
-    for (let i = 0; i < 12; i++) {
-        setTimeout(() => {
-            const p = document.createElement('div');
-            p.className = 'dur-particle';
-            
-            // Start from random screen position (center-ish)
-            const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 200;
-            const startY = window.innerHeight / 2 + (Math.random() - 0.5) * 200;
-            
-            p.style.left = startX + 'px';
-            p.style.top = startY + 'px';
-            p.style.opacity = '1';
-            
-            container.appendChild(p);
-
-            // Animate to shell
-            const targetX = shellRect.left + shellRect.width / 2;
-            const targetY = shellRect.top + shellRect.height / 2;
-
-            p.animate([
-                { left: startX + 'px', top: startY + 'px', transform: 'scale(1.5)', opacity: 1 },
-                { left: targetX + 'px', top: targetY + 'px', transform: 'scale(0.2)', opacity: 0 }
-            ], {
-                duration: 800 + Math.random() * 400,
-                easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
-            }).onfinish = () => p.remove();
-        }, i * 100);
-    }
-
-    // 4. Close Shell and clear badge
-    setTimeout(() => {
-        shell.classList.remove('open');
-        badge.classList.remove('show');
-    }, 4000);
-
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-};
-
-// Injection for particles container
-(function initAnimationLayer() {
-    if (!document.getElementById('dur-animation-container')) {
-        const div = document.createElement('div');
-        div.id = 'dur-animation-container';
-        document.body.appendChild(div);
-    }
-})();
 
 initApp();
