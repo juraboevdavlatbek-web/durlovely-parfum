@@ -27,6 +27,33 @@ function sendTelegramMessage(chatId, text) {
     req.end();
 }
 
+// Logic to award points ONLY after successful payment or delivery
+async function awardDurPoints(orderId) {
+    const orderSearch = await dbRequest('findOne', 'orders', { filter: { id: parseInt(orderId) } });
+    if (!orderSearch.document) return;
+    
+    const order = orderSearch.document;
+    if (order.pointsAwarded) return; // Prevent double awarding
+
+    const customerSearch = await dbRequest('findOne', 'customers', { filter: { $or: [{ phone: order.phone }, { tgId: order.tgId }] } });
+    if (customerSearch.document) {
+        const customer = customerSearch.document;
+        const amountClean = parseInt(String(order.total).replace(/[^\d]/g, '')) || 0;
+        const bonusDur = Math.max(1, Math.floor(amountClean / 100000));
+        
+        const newDur = (customer.dur || 0) + bonusDur;
+        const history = customer.durHistory || [];
+        history.unshift({ reason: `#${order.id} buyurtma uchun bonus`, amount: bonusDur, date: new Date().toLocaleString() });
+        
+        // Update Customer Points
+        await dbRequest('updateOne', 'customers', { filter: { id: customer.id }, update: { $set: { dur: newDur, durHistory: history } } });
+        
+        // Mark order as points awarded
+        await dbRequest('updateOne', 'orders', { filter: { id: order.id }, update: { $set: { pointsAwarded: true } } });
+        console.log(`[DUR-AWARD] Awarded ${bonusDur} to ${customer.phone} for Order #${order.id}`);
+    }
+}
+
 const { MongoClient } = require('mongodb');
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -346,19 +373,6 @@ const server = http.createServer(async (req, res) => {
             };
             await dbRequest('insertOne', 'orders', { document: order });
             
-            const search = await dbRequest('findOne', 'customers', { filter: { $or: [{ phone: order.phone }, { tgId: order.tgId }] } });
-            if (search.document) {
-                const customer = search.document;
-                // Award 1 Dur for every 100,000 UZS spent
-                const amountClean = parseInt(order.total.replace(/[^\d]/g, '')) || 0;
-                const bonusDur = Math.max(1, Math.floor(amountClean / 100000));
-                
-                const newDur = (customer.dur || 0) + bonusDur;
-                const history = customer.durHistory || [];
-                history.unshift({ reason: `#${order.id} buyurtma uchun bonus`, amount: bonusDur, date: new Date().toLocaleString() });
-                await dbRequest('updateOne', 'customers', { filter: { id: customer.id }, update: { $set: { dur: newDur, durHistory: history } } });
-            }
-
             // Notify Admin (Pending Status)
             sendTelegramMessage(ADMIN_CHAT_ID, `🛠 <b>[ADMIN PANEL] YANGI BUYURTMA #${order.id}</b>\n\n💰 ${order.total} UZS\n📍 ${order.address}\n\n<i>To'lov kutilmoqda... (v2.0)</i>`);
 
@@ -392,6 +406,12 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             const { status } = JSON.parse(body);
             await dbRequest('updateOne', 'orders', { filter: { id: id }, update: { $set: { status: status } } });
+            
+            // If delivered manually, award points if not already awarded
+            if (status === 'delivered') {
+                await awardDurPoints(id);
+            }
+
             setJSON();
             res.end(JSON.stringify({ success: true }));
         });
@@ -442,6 +462,9 @@ const server = http.createServer(async (req, res) => {
                         filter: { id: parseInt(merchant_trans_id) }, 
                         update: { $set: { paymentStatus: 'paid', paid_at: new Date().toLocaleString() } } 
                     });
+
+                    // Award points immediately upon payment
+                    await awardDurPoints(merchant_trans_id);
                     
                     // Notify User after payment
                     const search = await dbRequest('findOne', 'orders', { filter: { id: parseInt(merchant_trans_id) } });

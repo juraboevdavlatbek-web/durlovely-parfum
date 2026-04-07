@@ -214,31 +214,10 @@
             <h1 class="luxury-text gold-text" style="font-size: 1.5rem; margin: 0; text-align: center;">DURLOVELY</h1>
         </div>
         
-        <nav id="main-nav">
-            <a href="#" class="nav-item active" onclick="switchView('dashboard', this)">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="#" class="nav-item" onclick="switchView('orders', this)">
-                <i class="fa-solid fa-shopping-cart"></i>
-                <span>Buyurtmalar</span>
-            </a>
-            <a href="#" class="nav-item" onclick="switchView('products', this)">
-                <i class="fa-solid fa-box"></i>
-                <span>Mahsulotlar</span>
-            </a>
             <a href="#" class="nav-item" onclick="switchView('customers', this)">
-                <div class="stats-grid" id="dashboard-stats">
-                <!-- Dynamic Stats -->
-            </div>
-
-            <div class="chart-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 16px; font-weight: 500;">Sotuvlar Dinamikasi</h3>
-                    <div style="font-size: 12px; color: #666;">Oxirgi 7 kun</div>
-                </div>
-                <canvas id="salesChart"></canvas>
-            </div>
+                <i class="fa-solid fa-users"></i>
+                <span>Mijozlar</span>
+            </a>
             <a href="#" class="nav-item" onclick="switchView('notifs', this)">
                 <i class="fa-solid fa-bell"></i>
                 <span>Xabarnomalar</span>
@@ -286,6 +265,22 @@
                 </div>
                 <div style="display: flex; gap: 15px; margin-top: 25px;">
                     <button type="button" onclick="closeModal()" style="background: none; border: 1px solid var(--border); color: #888; flex: 1; padding: 12px; border-radius: 10px; cursor: pointer;">BEKOR</button>
+                    <button type="submit" class="btn-primary-old" style="flex: 1.5;">SAQLASH</button>
+                </div>
+            </form>
+        </div>
+    <!-- Customer Points Modal -->
+    <div id="points-modal" class="modal-overlay">
+        <div class="modal-content" style="width: 320px;">
+            <h3 class="luxury-text" style="font-size: 1.2rem; margin-bottom: 20px;">Ballarni Tahrirlash</h3>
+            <form id="points-form">
+                <input type="hidden" id="cust-id">
+                <div class="form-group">
+                    <label>Mijoz ballari (Dur)</label>
+                    <input type="number" id="cust-dur" step="0.1" required>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" onclick="closePointsModal()" style="background: none; border: 1px solid var(--border); color: #888; flex: 1; padding: 10px; border-radius: 8px; cursor: pointer;">BEKOR</button>
                     <button type="submit" class="btn-primary-old" style="flex: 1.5;">SAQLASH</button>
                 </div>
             </form>
@@ -497,13 +492,19 @@
             container.innerHTML += `
                 <div class="stats-grid">
                     ${state.customers.length > 0 ? state.customers.map(c => `
-                        <div class="stat-card" style="display: flex; align-items: center; gap: 15px;">
-                            <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="fa-solid fa-user"></i>
+                        <div class="stat-card" style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent);">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 14px;">${c.firstName || 'Mijoz'}</div>
+                                    <div style="font-size: 11px; color: #666;">${c.phone}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div style="font-weight: 600;">${c.firstName || 'Mijoz'}</div>
-                                <div style="font-size: 11px; color: #666;">${c.phone}</div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 700; color: #fff; font-size: 16px;">${(c.dur || 0).toFixed(1)} <span style="font-size: 10px; color: var(--accent);">DUR</span></div>
+                                <button onclick='openPointsModal(${JSON.stringify(c).replace(/'/g, "&apos;")})' style="background: none; border: none; color: #888; font-size: 11px; cursor: pointer; text-decoration: underline;">O'zgartirish</button>
                             </div>
                         </div>
                     `).join('') : '<p style="color: #666;">Hozircha mijozlar mavjud emas.</p>'}
@@ -603,6 +604,31 @@
 
         function closeModal() { document.getElementById('product-modal').style.display = 'none'; }
         function editProduct(p) { openProductModal(p); }
+
+        function openPointsModal(c) {
+            document.getElementById('cust-id').value = c.id;
+            document.getElementById('cust-dur').value = c.dur || 0;
+            document.getElementById('points-modal').style.display = 'flex';
+        }
+
+        function closePointsModal() {
+            document.getElementById('points-modal').style.display = 'none';
+        }
+
+        document.getElementById('points-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('cust-id').value;
+            const dur = parseFloat(document.getElementById('cust-dur').value);
+            
+            try {
+                const res = await fetch(`${API_BASE}/customers/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dur })
+                });
+                if (res.ok) { closePointsModal(); await fetchData(); renderView(); }
+            } catch (e) { alert("Xatolik!"); }
+        };
 
         document.getElementById('product-form').onsubmit = async (e) => {
             e.preventDefault();
