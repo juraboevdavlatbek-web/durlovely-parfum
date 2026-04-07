@@ -45,7 +45,7 @@ const pages = {
             <!-- Hero Banner Slider -->
             <div class="banner-section" style="padding: 0 15px;">
                 <div class="liquid-glass" style="height: 320px; position: relative; overflow: hidden; border-radius: 32px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
-                    <img src="../shared-assets/assets/images/banner.png" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7);">
+                    <img src="/shared-assets/assets/images/banner.png" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7);">
                     <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, rgba(12,10,9,0.3) 50%, transparent 100%);"></div>
                     <div style="position: absolute; bottom: 35px; left: 25px; right: 25px;">
                         <span style="color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 8px; display: block;">Yangi Kolleksiya</span>
@@ -852,7 +852,7 @@ function renderProductCard(p) {
     
     const displayPrice = isVip ? (cleanPrice(p.vip_price || p.price)) : cleanPrice(p.price);
     const formattedPrice = displayPrice.toLocaleString();
-    const productImg = p.image || p.img || '../shared-assets/assets/images/logo.png';
+    const productImg = p.image || p.img || '/shared-assets/assets/images/logo.png';
 
     return `
         <div class="product-card liquid-glass" style="padding: 12px; border-radius: 24px; cursor: pointer;" onclick="showProductDetail(${p.id})">
@@ -886,7 +886,7 @@ window.showProductDetail = function(id) {
     const displayPrice = isVip ? (p.vip_price || p.price) : p.price;
     const formattedPrice = Number(displayPrice).toLocaleString();
     const formattedOldPrice = Number(p.price).toLocaleString();
-    const productImg = p.image || p.img || '../shared-assets/assets/images/logo.png';
+    const productImg = p.image || p.img || '/shared-assets/assets/images/logo.png';
 
     const detailPage = `
         <div class="animate-fluid" style="padding-bottom: 120px;">
