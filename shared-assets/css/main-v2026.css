@@ -213,28 +213,22 @@ button, a, .clickable {
 .shell-top, .shell-bottom {
     position: absolute;
     width: 100%;
-    height: 50%;
-    background: linear-gradient(135deg, #A16207 0%, #EAB308 50%, #A16207 100%);
-    clip-path: polygon(10% 100%, 0% 80%, 0% 20%, 50% 0%, 100% 20%, 100% 80%, 90% 100%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .shell-top {
-    top: 0;
-    transform-origin: bottom;
-    transition: transform 0.5s ease;
     z-index: 2;
+    transform-origin: bottom center;
 }
 
 .shell-bottom {
-    bottom: 0;
-    transform: rotateX(20deg);
     z-index: 1;
+    transform: rotateX(40deg);
 }
 
 .dur-shell-container.open .shell-top {
-    transform: rotateX(-120deg);
+    transform: rotateX(-115deg) translateY(-10px);
 }
 
 .shell-pearl {
@@ -243,11 +237,17 @@ button, a, .clickable {
     height: 12px;
     background: radial-gradient(circle at 30% 30%, #fff 0%, #fde68a 50%, #a16207 100%);
     border-radius: 50%;
-    top: 50%;
+    top: 65%;
     left: 50%;
     transform: translate(-50%, -50%);
-    box-shadow: 0 0 12px var(--accent);
+    box-shadow: 0 0 15px rgba(161, 98, 7, 0.8);
     z-index: 1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.dur-shell-container.open .shell-pearl {
+    opacity: 1;
 }
 
 /* Float Badge (+N) */

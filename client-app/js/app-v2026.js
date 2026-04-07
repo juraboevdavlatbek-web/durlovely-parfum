@@ -34,8 +34,29 @@ const pages = {
                 <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 12px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,1); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
                     <div class="dur-shell-container" id="header-dur-shell">
                         <div class="shell-wrapper">
-                            <div class="shell-top"></div>
-                            <div class="shell-bottom"></div>
+                            <!-- Scallop Shell Top -->
+                            <div class="shell-top" style="position: absolute; width: 100%; height: 100%; z-index: 2; transform-origin: bottom center;">
+                                <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+                                    <defs>
+                                        <linearGradient id="goldGradHeader" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#78350f" />
+                                            <stop offset="25%" style="stop-color:#d97706" />
+                                            <stop offset="50%" style="stop-color:#fef3c7" />
+                                            <stop offset="75%" style="stop-color:#d97706" />
+                                            <stop offset="100%" style="stop-color:#78350f" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M 50,95 Q 10,90 5,50 Q 5,10 50,5 Q 95,10 95,50 Q 90,90 50,95" fill="url(#goldGradHeader)" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
+                                    <path d="M 50,5 L 50,95 M 30,10 L 40,95 M 70,10 L 60,95 M 15,25 L 30,95 M 85,25 L 70,95" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" fill="none"/>
+                                </svg>
+                            </div>
+                            <!-- Scallop Shell Bottom -->
+                            <div class="shell-bottom" style="position: absolute; width: 100%; height: 100%; z-index: 1; transform: rotateX(40deg);">
+                                <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+                                    <path d="M 50,95 Q 10,90 5,50 Q 5,10 50,5 Q 95,10 95,50 Q 90,90 50,95" fill="url(#goldGradHeader)" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
+                                    <path d="M 50,5 L 50,95 M 30,10 L 40,95 M 70,10 L 60,95 M 15,25 L 30,95 M 85,25 L 70,95" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" fill="none"/>
+                                </svg>
+                            </div>
                             <div class="shell-pearl"></div>
                         </div>
                         <div class="dur-float-badge" id="dur-float-badge">+0</div>
