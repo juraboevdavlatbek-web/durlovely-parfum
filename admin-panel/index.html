@@ -261,7 +261,14 @@
                 </div>
                 <div class="form-group">
                     <label>Mahsulot rasm URL</label>
-                    <input type="text" id="p-image-url" placeholder="https://...">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="p-image-url" placeholder="https://..." style="flex: 1;">
+                        <input type="file" id="p-image-file" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                        <button type="button" onclick="document.getElementById('p-image-file').click()" style="padding: 0 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; color: #888;">
+                            <i class="fa-solid fa-upload"></i>
+                        </button>
+                    </div>
+                    <div id="upload-status" style="font-size: 10px; margin-top: 5px; color: var(--accent);"></div>
                 </div>
                 <div style="display: flex; gap: 15px; margin-top: 25px;">
                     <button type="button" onclick="closeModal()" style="background: none; border: 1px solid var(--border); color: #888; flex: 1; padding: 12px; border-radius: 10px; cursor: pointer;">BEKOR</button>
@@ -630,6 +637,28 @@
             } catch (e) { alert("Xatolik!"); }
         };
 
+        async function handleImageUpload(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const status = document.getElementById('upload-status');
+            
+            // Limit file size to 2MB to keep MongoDB documents small
+            if (file.size > 2 * 1024 * 1024) {
+                status.innerText = "❌ Fayl juda katta (max 2MB)!";
+                return;
+            }
+
+            status.innerText = "Tayyorlanmoqda...";
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Data = e.target.result;
+                document.getElementById('p-image-url').value = base64Data;
+                status.innerText = "✅ Rasm tayyor (Saqlashni bosing)!";
+            };
+            reader.readAsDataURL(file);
+        }
+
         document.getElementById('product-form').onsubmit = async (e) => {
             e.preventDefault();
             const id = document.getElementById('p-id').value;
@@ -651,7 +680,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                if (res.ok) { closeModal(); await fetchData(); renderView(); }
+                if (res.ok) { 
+                    closeModal(); 
+                    document.getElementById('upload-status').innerText = "";
+                    await fetchData(); 
+                    renderView(); 
+                }
             } catch (e) { alert("Server xatosi"); }
         };
 
