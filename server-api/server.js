@@ -672,6 +672,12 @@ const server = http.createServer(async (req, res) => {
 
     // SPA Fallback
     if (!finalPath) {
+        const isAsset = requestedPath.includes('.') || requestedPath.startsWith('/shared-assets');
+        if (isAsset) {
+            res.writeHead(404);
+            res.end('Asset Not Found');
+            return;
+        }
         if (requestedPath.startsWith('/admin')) {
             finalPath = path.join(PUBLIC_DIR, 'admin-panel/index.html');
         } else {

@@ -857,7 +857,7 @@ function renderProductCard(p) {
     return `
         <div class="product-card liquid-glass" style="padding: 12px; border-radius: 24px; cursor: pointer;" onclick="showProductDetail(${p.id})">
             <div style="height: 180px; border-radius: 18px; overflow: hidden; margin-bottom: 12px; position: relative;">
-                <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                <img src="${productImg}" onerror="this.src='/shared-assets/assets/images/logo.png'; this.onerror=null;" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                 ${p.audio ? `
                     <button class="audio-btn-${p.id} liquid-glass" onclick="event.stopPropagation(); playAudio(${p.id})" style="position: absolute; bottom: 10px; left: 10px; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); border-color: var(--accent); font-size: 14px; z-index: 5;">
                         <i class="fa-solid fa-volume-high"></i>
