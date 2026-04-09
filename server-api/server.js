@@ -672,10 +672,10 @@ const server = http.createServer(async (req, res) => {
 
     // SPA Fallback
     if (!finalPath) {
-        const isAsset = requestedPath.includes('.') || requestedPath.startsWith('/shared-assets');
+        const isAsset = (requestedPath.includes('.') && !requestedPath.endsWith('.html')) || requestedPath.startsWith('/shared-assets');
         if (isAsset) {
             res.writeHead(404);
-            res.end('Asset Not Found');
+            res.end('Aktiv topilmadi'); // Asset Not Found
             return;
         }
         if (requestedPath.startsWith('/admin')) {
