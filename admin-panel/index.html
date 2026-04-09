@@ -292,6 +292,8 @@
                 </div>
             </form>
         </div>
+    </div>
+
     <!-- Customer Points Modal -->
     <div id="points-modal" class="modal-overlay">
         <div class="modal-content" style="width: 320px;">
@@ -586,7 +588,7 @@
                                 <label>Xabar</label>
                                 <textarea id="n-message" rows="4" style="width: 100%; background: #1a1a1a; border: 1px solid var(--border); border-radius: 10px; color: #fff; padding: 10px;"></textarea>
                             </div>
-                            <button type="submit" class="btn-primary-old" style="width: 100%;">YUBORISH</button>
+                            <button type="submit" class="btn-primary" style="width: 100%;">YUBORISH</button>
                         </form>
                     </div>
                     <div style="background: rgba(255,255,255,0.02); padding: 25px; border-radius: 20px; border: 1px solid var(--border);">
@@ -608,7 +610,7 @@
         function renderSlides(container) {
             container.innerHTML += `
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-                    <button class="btn-primary-old" onclick="openSlideModal()">+ YANGI SLAYD</button>
+                    <button class="btn-primary" onclick="window.openSlideModal()">+ YANGI SLAYD</button>
                 </div>
                 <div style="background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid var(--border);">
                     <table>
@@ -775,7 +777,7 @@
             } catch (e) { alert("Server xatosi"); }
         };
         
-        function openSlideModal(s = null) {
+        window.openSlideModal = function(s = null) {
             const modal = document.getElementById('slide-modal');
             if (s) {
                 document.getElementById('s-modal-title').innerText = "Slaydni Tahrirlash";
@@ -787,14 +789,16 @@
                 document.getElementById('s-modal-title').innerText = "Yangi Slayd";
                 document.getElementById('slide-form').reset();
                 document.getElementById('s-id').value = '';
+                document.getElementById('s-image-url').value = '';
+                document.getElementById('s-upload-status').innerText = "";
             }
             modal.style.display = 'flex';
         }
 
-        function closeSlideModal() { document.getElementById('slide-modal').style.display = 'none'; }
-        window.editSlide = (s) => openSlideModal(s);
+        window.closeSlideModal = function() { document.getElementById('slide-modal').style.display = 'none'; }
+        window.editSlide = (s) => window.openSlideModal(s);
 
-        async function deleteSlide(id) {
+        window.deleteSlide = async function(id) {
             if (!confirm("Ushbu slayd o'chirilsinmi?")) return;
             try {
                 const res = await fetch(`${API_BASE}/slides/${id}`, { method: 'DELETE' });
@@ -802,7 +806,7 @@
             } catch (e) { alert("Xatolik!"); }
         }
 
-        async function handleSlideImageUpload(input) {
+        window.handleSlideImageUpload = async function(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
             const status = document.getElementById('s-upload-status');
