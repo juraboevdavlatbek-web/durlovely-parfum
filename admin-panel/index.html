@@ -522,6 +522,7 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>NOMI</th>
                                 <th>KATEGORIYA</th>
                                 <th>NARX</th>
@@ -533,6 +534,7 @@
                         <tbody>
                             ${state.products.map(p => `
                                 <tr>
+                                    <td style="font-size: 11px; color: #666; font-family: monospace; cursor: help;" title="Nusxa olish uchun bosing" onclick="navigator.clipboard.writeText('${p.id}'); alert('ID nusxalandi: ${p.id}')">${p.id}</td>
                                     <td>${p.name}</td>
                                     <td>${p.category}</td>
                                     <td>${p.price.toLocaleString()}</td>
