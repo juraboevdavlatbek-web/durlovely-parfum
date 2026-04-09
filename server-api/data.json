@@ -213,5 +213,36 @@
       "id": 1775473427290,
       "dateJoined": "4/6/2026"
     }
+  ],
+  "notifications": [
+    {
+      "title": "hfrh",
+      "message": "bjkdb",
+      "id": 1775735085972,
+      "date": "4/9/2026, 8:44:45 PM"
+    },
+    {
+      "title": "hfuhd",
+      "message": "khdk",
+      "id": 1775735312215,
+      "date": "4/9/2026, 8:48:32 PM"
+    },
+    {
+      "title": "vh",
+      "message": "fffff",
+      "id": 1775735556330,
+      "date": "4/9/2026, 8:52:36 PM"
+    }
+  ],
+  "slides": [
+    {
+      "title": "Yozgi Kolleksiya",
+      "image": "/shared-assets/assets/images/banner.png",
+      "productIds": [
+        1,
+        2
+      ],
+      "id": 1775737301188
+    }
   ]
 }

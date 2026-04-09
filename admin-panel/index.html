@@ -234,6 +234,10 @@
                 <i class="fa-solid fa-bell"></i>
                 <span>Xabarnomalar</span>
             </a>
+            <a href="#" class="nav-item" onclick="switchView('slides', this)">
+                <i class="fa-solid fa-images"></i>
+                <span>Slayderlar</span>
+            </a>
         </nav>
 
         <button class="btn-exit" onclick="window.location.reload()">CHIQISH</button>
@@ -306,6 +310,39 @@
         </div>
     </div>
 
+    <!-- Slide Modal -->
+    <div id="slide-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="luxury-text" id="s-modal-title" style="font-size: 1.3rem; margin-bottom: 25px;">Yangi Slayd</h3>
+            <form id="slide-form">
+                <input type="hidden" id="s-id">
+                <div class="form-group">
+                    <label>Sarlavha (Title)</label>
+                    <input type="text" id="s-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Mahsulot IDlari (vergul bilan ajrating, max 15ta)</label>
+                    <input type="text" id="s-pids" placeholder="1, 2, 1775448916737">
+                </div>
+                <div class="form-group">
+                    <label>Slayd rasm/video URL</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="s-image-url" placeholder="https://..." style="flex: 1;">
+                        <input type="file" id="s-image-file" accept="image/*,video/*" style="display: none;" onchange="handleSlideImageUpload(this)">
+                        <button type="button" onclick="document.getElementById('s-image-file').click()" style="padding: 0 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; color: #888;">
+                            <i class="fa-solid fa-upload"></i>
+                        </button>
+                    </div>
+                    <div id="s-upload-status" style="font-size: 10px; margin-top: 5px; color: var(--accent);"></div>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" onclick="closeSlideModal()" style="background: none; border: 1px solid var(--border); color: #888; flex: 1; padding: 12px; border-radius: 10px; cursor: pointer;">BEKOR</button>
+                    <button type="submit" class="btn-primary-old" style="flex: 1.5;">SAQLASH</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const state = {
             view: 'dashboard',
@@ -313,7 +350,8 @@
             products: [],
             categories: [],
             customers: [],
-            notifs: []
+            notifs: [],
+            slides: []
         };
 
         const API_BASE = '/api';
@@ -325,18 +363,20 @@
 
         async function fetchData() {
             try {
-                const [ordersRes, productsRes, categoriesRes, customersRes, notifsRes] = await Promise.all([
+                const [ordersRes, productsRes, categoriesRes, customersRes, notifsRes, slidesRes] = await Promise.all([
                     fetch(`${API_BASE}/orders`),
                     fetch(`${API_BASE}/products`),
                     fetch(`${API_BASE}/categories`),
                     fetch(`${API_BASE}/customers`).catch(() => ({ json: () => [] })),
-                    fetch(`${API_BASE}/notifications`).catch(() => ({ json: () => [] }))
+                    fetch(`${API_BASE}/notifications`).catch(() => ({ json: () => [] })),
+                    fetch(`${API_BASE}/slides`).catch(() => ({ json: () => [] }))
                 ]);
                 state.orders = await ordersRes.json();
                 state.products = await productsRes.json();
                 state.categories = await categoriesRes.json();
                 state.customers = customersRes.ok ? await customersRes.json() : [];
                 state.notifs = notifsRes.ok ? await notifsRes.json() : [];
+                state.slides = slidesRes.ok ? await slidesRes.json() : [];
             } catch (e) {
                 console.error("Fetch error:", e);
             }
@@ -366,6 +406,7 @@
             if (state.view === 'products') renderProducts(container);
             if (state.view === 'customers') renderCustomers(container);
             if (state.view === 'notifs') renderNotifs(container);
+            if (state.view === 'slides') renderSlides(container);
         }
 
         function renderDashboard(container) {
@@ -564,6 +605,39 @@
             `;
         }
 
+        function renderSlides(container) {
+            container.innerHTML += `
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                    <button class="btn-primary-old" onclick="openSlideModal()">+ YANGI SLAYD</button>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid var(--border);">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>RASM</th>
+                                <th>SARLAVHA</th>
+                                <th>MAHSULOTLAR (ID)</th>
+                                <th style="text-align: right;">AMALLAR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${state.slides.map(s => `
+                                <tr>
+                                    <td><img src="${s.image}" style="width: 80px; height: 40px; border-radius: 8px; object-fit: cover;"></td>
+                                    <td style="font-weight: 600;">${s.title}</td>
+                                    <td style="color: #888; font-size: 12px;">${(s.productIds || []).length} ta mahsulot</td>
+                                    <td style="text-align: right;">
+                                        <button onclick='editSlide(${JSON.stringify(s).replace(/'/g, "&apos;")})' style="background: none; border: none; color: #888; cursor: pointer; margin-right: 15px;"><i class="fa-solid fa-edit"></i></button>
+                                        <button onclick="deleteSlide(${s.id})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
         async function updateOrderStatus(id, status) {
             try {
                 const res = await fetch(`${API_BASE}/orders/${id}`, {
@@ -700,8 +774,80 @@
                 }
             } catch (e) { alert("Server xatosi"); }
         };
+        
+        function openSlideModal(s = null) {
+            const modal = document.getElementById('slide-modal');
+            if (s) {
+                document.getElementById('s-modal-title').innerText = "Slaydni Tahrirlash";
+                document.getElementById('s-id').value = s.id;
+                document.getElementById('s-title').value = s.title;
+                document.getElementById('s-pids').value = (s.productIds || []).join(', ');
+                document.getElementById('s-image-url').value = s.image;
+            } else {
+                document.getElementById('s-modal-title').innerText = "Yangi Slayd";
+                document.getElementById('slide-form').reset();
+                document.getElementById('s-id').value = '';
+            }
+            modal.style.display = 'flex';
+        }
 
-        window.onclick = (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); };
+        function closeSlideModal() { document.getElementById('slide-modal').style.display = 'none'; }
+        window.editSlide = (s) => openSlideModal(s);
+
+        async function deleteSlide(id) {
+            if (!confirm("Ushbu slayd o'chirilsinmi?")) return;
+            try {
+                const res = await fetch(`${API_BASE}/slides/${id}`, { method: 'DELETE' });
+                if (res.ok) { await fetchData(); renderView(); }
+            } catch (e) { alert("Xatolik!"); }
+        }
+
+        async function handleSlideImageUpload(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const status = document.getElementById('s-upload-status');
+            if (file.size > 2.5 * 1024 * 1024) { status.innerText = "❌ Fayl juda katta (max 2.5MB)!"; return; }
+            status.innerText = "Tayyorlanmoqda...";
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                document.getElementById('s-image-url').value = e.target.result;
+                status.innerText = "✅ Media tayyor!";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('slide-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('s-id').value;
+            const pidsRaw = document.getElementById('s-pids').value;
+            const productIds = pidsRaw.split(',').map(item => item.trim()).filter(item => item !== '').map(item => isNaN(item) ? item : parseInt(item));
+            
+            const data = {
+                title: document.getElementById('s-title').value,
+                image: document.getElementById('s-image-url').value,
+                productIds: productIds
+            };
+
+            const url = id ? `${API_BASE}/slides/${id}` : `${API_BASE}/slides`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) { closeSlideModal(); await fetchData(); renderView(); }
+            } catch (e) { alert("Server xatosi"); }
+        };
+
+        window.onclick = (e) => { 
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal(); 
+                closePointsModal();
+                closeSlideModal();
+            }
+        };
 
         init();
     </script>

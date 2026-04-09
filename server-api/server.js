@@ -628,6 +628,35 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // API: Slides
+    if (req.url.startsWith('/api/slides') && req.method === 'GET') {
+        const result = await dbRequest('find', 'slides');
+        setJSON();
+        res.end(JSON.stringify(result.documents || []));
+        return;
+    }
+
+    if (req.url.startsWith('/api/slides') && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            const slide = JSON.parse(body);
+            slide.id = Date.now();
+            await dbRequest('insertOne', 'slides', { document: slide });
+            setJSON();
+            res.end(JSON.stringify({ success: true, id: slide.id }));
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/api/slides/') && req.method === 'DELETE') {
+        const id = parseInt(req.url.split('/').pop());
+        await dbRequest('deleteOne', 'slides', { filter: { id } });
+        setJSON();
+        res.end(JSON.stringify({ success: true }));
+        return;
+    }
+
     // API: Categories
     if (req.url.startsWith('/api/categories') && req.method === 'GET') {
         const result = await dbRequest('find', 'categories');

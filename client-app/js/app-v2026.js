@@ -42,20 +42,9 @@ const pages = {
                 </div>
             </header>
 
-            <!-- Hero Banner Slider -->
-            <div class="banner-section" style="padding: 0 15px;">
-                <div class="liquid-glass" style="height: 320px; position: relative; overflow: hidden; border-radius: 32px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
-                    <img src="/shared-assets/assets/images/banner.png" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7);">
-                    <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, rgba(12,10,9,0.3) 50%, transparent 100%);"></div>
-                    <div style="position: absolute; bottom: 35px; left: 25px; right: 25px;">
-                        <span style="color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 8px; display: block;">Yangi Kolleksiya</span>
-                        <h2 class="luxury-text" style="font-size: 2.4rem; line-height: 1.1; margin-bottom: 20px; color: #fff;">Qirollik Iforlari<br><span class="gold-text">2026</span></h2>
-                        <div style="display: flex; gap: 12px;">
-                            <button class="btn-primary" style="padding: 12px 24px; font-size: 12px;" onclick="navigate('catalog')">Kashf etish</button>
-                            <button class="liquid-glass" style="padding: 12px 24px; font-size: 12px; color: #fff; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);">Batafsil</button>
-                        </div>
-                    </div>
-                </div>
+            <!-- Dynamic Header Slider -->
+            <div id="home-slider-container" style="padding: 0 15px; margin-bottom: 20px;">
+                <!-- Filled by JS -->
             </div>
 
             <!-- Categories Quick Filter -->
@@ -354,6 +343,9 @@ window.navigate = async function(page) {
         } else {
             console.warn(`[NAV] Home grid not found or ALL_PRODUCTS empty! Grid: ${!!homeGrid}`);
         }
+        
+        // Render Dynamic Slider
+        renderSlider();
     }
 
     // Initialize Catalog if navigating to it
@@ -804,13 +796,20 @@ function renderLikes() {
 
 // 2.9 Catalog & Search Logic
 let allProducts = [];
+let allSlides = [];
 
 async function fetchProducts() {
     try {
-        console.log(`[FETCH] Requesting products from ${API_BASE}/products...`);
-        const res = await fetch(`${API_BASE}/products?v=${Date.now()}`);
-        allProducts = await res.json();
-        console.log(`[FETCH] Success! Received ${allProducts.length} products.`);
+        console.log(`[FETCH] Requesting products and slides...`);
+        const [pRes, sRes] = await Promise.all([
+            fetch(`${API_BASE}/products?v=${Date.now()}`),
+            fetch(`${API_BASE}/slides?v=${Date.now()}`).catch(() => ({ json: () => [] }))
+        ]);
+        
+        allProducts = await pRes.json();
+        allSlides = sRes.ok ? await sRes.json() : [];
+        console.log(`[FETCH] Success! Received ${allProducts.length} products and ${allSlides.length} slides.`);
+        
         // If navigating to home, refresh the grid
         const homeGrid = document.getElementById('home-product-grid');
         if (homeGrid) {
@@ -818,9 +817,99 @@ async function fetchProducts() {
             homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
         }
     } catch (e) {
-        console.error("[FETCH] Products Error:", e);
+        console.error("[FETCH] Products/Slides Error:", e);
     }
 }
+
+// 2.10 Slider Logic
+let currentSlideIndex = 0;
+let slideInterval = null;
+
+window.renderSlider = function() {
+    const container = document.getElementById('home-slider-container');
+    if (!container) return;
+
+    // Default slide if none exist
+    const slidesToRender = allSlides.length > 0 ? allSlides : [{
+        title: "Qirollik Iforlari 2026",
+        image: "/shared-assets/assets/images/banner.png",
+        productIds: []
+    }];
+
+    container.innerHTML = `
+        <div class="slider-wrapper" style="height: 320px; position: relative; overflow: hidden; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+            ${slidesToRender.map((s, i) => `
+                <div class="slide ${i === 0 ? 'active' : ''}" onclick='handleSlideClick(${JSON.stringify(s).replace(/'/g, "&apos;")})' style="position: absolute; inset: 0; transition: opacity 0.8s ease; opacity: ${i === 0 ? '1' : '0'}; z-index: ${i === 0 ? '5' : '1'};">
+                    <img src="${s.image}" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7);">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, rgba(12,10,9,0.3) 50%, transparent 100%);"></div>
+                    <div style="position: absolute; bottom: 35px; left: 25px; right: 25px;">
+                        <span style="color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 8px; display: block;">Tavsiya qilamiz</span>
+                        <h2 class="luxury-text" style="font-size: 2.2rem; line-height: 1.1; margin-bottom: 15px; color: #fff;">${s.title}</h2>
+                        <button class="btn-primary" style="padding: 10px 20px; font-size: 11px; border:none; border-radius: 8px;">KO'RISH</button>
+                    </div>
+                </div>
+            `).join('')}
+            <div class="slider-dots" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10;">
+                ${slidesToRender.map((_, i) => `
+                    <div class="dot ${i === 0 ? 'active' : ''}" style="width: ${i === 0 ? '20px' : '6px'}; height: 6px; background: ${i === 0 ? 'var(--accent)' : 'rgba(255,255,255,0.3)'}; border-radius: 3px; transition: 0.3s;"></div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    currentSlideIndex = 0;
+    startAutoSlide();
+};
+
+function startAutoSlide() {
+    if (slideInterval) clearInterval(slideInterval);
+    if (allSlides.length <= 1) return;
+
+    slideInterval = setInterval(() => {
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        if (!slides.length) return;
+
+        slides[currentSlideIndex].style.opacity = '0';
+        slides[currentSlideIndex].style.zIndex = '1';
+        dots[currentSlideIndex].style.width = '6px';
+        dots[currentSlideIndex].style.background = 'rgba(255,255,255,0.3)';
+
+        currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+
+        slides[currentSlideIndex].style.opacity = '1';
+        slides[currentSlideIndex].style.zIndex = '5';
+        dots[currentSlideIndex].style.width = '20px';
+        dots[currentSlideIndex].style.background = 'var(--accent)';
+    }, 5000);
+}
+
+window.handleSlideClick = function(slide) {
+    console.log("[SLIDE] Clicked:", slide.title);
+    if (!slide.productIds || !slide.productIds.length) {
+        navigate('catalog');
+        return;
+    }
+
+    // Filter products by IDs
+    const linkedProducts = allProducts.filter(p => slide.productIds.includes(p.id));
+    
+    // Navigate to catalog
+    navigate('catalog');
+    
+    // Override catalog grid with a small delay for re-render
+    setTimeout(() => {
+        const grid = document.getElementById('catalog-grid');
+        if (grid) {
+            grid.innerHTML = (linkedProducts.length > 0) 
+                ? linkedProducts.map(p => renderProductCard(p)).join('')
+                : `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">Ushbu kolleksiya uchun mahsulotlar topilmadi.</div>`;
+            
+            const title = document.querySelector('#page-content h2');
+            if (title) title.textContent = slide.title;
+        }
+    }, 50);
+};
 
 window.searchProducts = function(query) {
     const resultsContainer = document.getElementById('catalog-grid');
@@ -1228,23 +1317,73 @@ window.showNotifications = function() {
         .then(res => res.json())
         .then(notifs => {
             const pageContent = document.getElementById('page-content');
+            
+            // 1. Sort newest first (assuming larger ID or date string)
+            notifs.sort((a, b) => (b.id || 0) - (a.id || 0));
+            
+            // 2. Get read status from localStorage
+            const readNotifs = JSON.parse(localStorage.getItem('durlovely_read_notifs') || '[]');
+            
+            window.markNotifAsRead = (id) => {
+                let currentRead = JSON.parse(localStorage.getItem('durlovely_read_notifs') || '[]');
+                if (!currentRead.includes(id)) {
+                    currentRead.push(id);
+                    localStorage.setItem('durlovely_read_notifs', JSON.stringify(currentRead));
+                    showNotifications(); // Refresh list
+                }
+            };
+
             pageContent.innerHTML = `
-                <div class="animate-fluid" style="padding: 20px; padding-bottom: 120px;">
-                    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 35px;">
-                        <i class="fa-solid fa-arrow-left" onclick="navigate('home')" style="font-size: 20px; color: #fff; cursor: pointer;"></i>
-                        <h2 class="luxury-text gold-text" style="font-size: 2rem;">Xabarlar</h2>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 15px;">
-                        ${notifs.length > 0 ? notifs.map(n => `
-                            <div class="liquid-glass" style="padding: 20px; border-radius: 20px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <span style="color: var(--accent); font-size: 10px; font-weight: 800; text-transform: uppercase;">Rasmiy</span>
-                                    <span style="color: #444; font-size: 10px;">${n.date}</span>
+                <div class="animate-fluid" style="padding: 24px; padding-bottom: 120px; background: radial-gradient(circle at 50% 0%, rgba(161,98,7,0.05) 0%, transparent 70%); position: relative; min-height: 100vh;">
+                    <!-- Minimalist Logo-inspired Background -->
+                    <div style="position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 350px; height: 350px; background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: 0;"></div>
+                    <div style="position: absolute; bottom: 150px; right: -50px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(161,98,7,0.02) 0%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: 0;"></div>
+
+                    <div style="position: relative; z-index: 1;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 35px;">
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                <div onclick="navigate('home')" style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                    <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: #fff;"></i>
                                 </div>
-                                <h4 style="color: #fff; font-size: 16px; font-weight: 600; margin-bottom: 8px;">${n.title || 'DURLOVELY Янгилик'}</h4>
-                                <p style="color: #888; font-size: 14px; line-height: 1.6;">${n.text || n.message}</p>
+                                <h2 class="luxury-text gold-text" style="font-size: 2.2rem; margin: 0;">Xabarlar</h2>
                             </div>
-                        `).join('') : '<div style="text-align: center; color: #444; padding: 100px 20px;">Hozircha yangi xabarlar yo\'q</div>'}
+                            <i class="fa-solid fa-ellipsis-vertical" style="color: #666; font-size: 20px;"></i>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            ${notifs.length > 0 ? notifs.map(n => {
+                            const isRead = readNotifs.includes(n.id);
+                            // Choose icon based on keywords
+                            let icon = 'fa-bell';
+                            const title = (n.title || '').toLowerCase();
+                            if (title.includes('sovg') || title.includes('gift')) icon = 'fa-gift';
+                            if (title.includes('chegirma') || title.includes('sale')) icon = 'fa-tag';
+                            if (title.includes('buyurtma') || title.includes('order')) icon = 'fa-bag-shopping';
+                            
+                            return `
+                                <div class="notif-card ${isRead ? '' : 'unread-card'}" onclick="markNotifAsRead(${n.id})">
+                                    ${!isRead ? '<div class="unread-badge">YANGI</div>' : ''}
+                                    <div class="notif-icon-box">
+                                        <i class="fa-solid ${icon}"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="notif-meta">
+                                            <span style="color: var(--accent); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;">RASMIY</span>
+                                            <span style="color: #555; font-size: 11px; font-weight: 500;">${n.date}</span>
+                                        </div>
+                                        <h4 class="notif-title">${n.title || 'DURLOVELY Янгилик'}</h4>
+                                        <p class="notif-text">${n.text || n.message}</p>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') : `
+                            <div style="text-align: center; padding: 100px 24px;">
+                                <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.03); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: #333; font-size: 32px;">
+                                    <i class="fa-solid fa-bell-slash"></i>
+                                </div>
+                                <div style="color: #555; font-size: 16px; font-weight: 500;">Hozircha yangi xabarlar yo'q</div>
+                            </div>
+                        `}
                     </div>
                 </div>
             `;
