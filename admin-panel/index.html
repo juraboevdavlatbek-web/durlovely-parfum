@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DURLOVELY | Admin Panel <!-- v2.3 --></title>
+    <title>DURLOVELY | Admin Panel <!-- v2.4 --></title>
     <link rel="stylesheet" href="/shared-assets/css/main-v2026.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -342,6 +342,21 @@
                     <button type="submit" class="btn-primary-old" style="flex: 1.5;">SAQLASH</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="modal-overlay" style="z-index: 1000;">
+        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
+            <div style="width: 60px; height: 60px; background: rgba(239,68,68,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; color: #ef4444;"></i>
+            </div>
+            <h3 class="luxury-text" style="font-size: 1.2rem; margin-bottom: 10px;">O'chirishni tasdiqlang</h3>
+            <p style="color: #888; font-size: 14px; margin-bottom: 30px; line-height: 1.5;">Haqiqatan ham ushbu elementni o'chirmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.</p>
+            <div style="display: flex; gap: 15px;">
+                <button type="button" onclick="closeDeleteConfirmModal()" style="background: none; border: 1px solid var(--border); color: #888; flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 600;">BEKOR</button>
+                <button type="button" id="confirm-delete-btn" style="background: #ef4444; border: none; color: #fff; flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 15px rgba(239,68,68,0.3);">O'CHIRISH</button>
+            </div>
         </div>
     </div>
 
@@ -800,12 +815,41 @@
         window.closeSlideModal = function() { document.getElementById('slide-modal').style.display = 'none'; }
         window.editSlide = (s) => window.openSlideModal(s);
 
-        window.deleteSlide = async function(id) {
-            if (!confirm("Ushbu slayd o'chirilsinmi?")) return;
+        let slideToDeleteId = null;
+
+        window.closeDeleteConfirmModal = function() {
+            document.getElementById('delete-confirm-modal').style.display = 'none';
+            slideToDeleteId = null;
+        }
+
+        window.deleteSlide = function(id) {
+            slideToDeleteId = id;
+            document.getElementById('delete-confirm-modal').style.display = 'flex';
+        }
+
+        document.getElementById('confirm-delete-btn').onclick = async function() {
+            if (!slideToDeleteId) return;
+            const btn = document.getElementById('confirm-delete-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "O'CHIRILMOQDA...";
+            btn.disabled = true;
+            
             try {
-                const res = await fetch(`${API_BASE}/slides/${id}`, { method: 'DELETE' });
-                if (res.ok) { await fetchData(); renderView(); }
-            } catch (e) { alert("Xatolik!"); }
+                const res = await fetch(`${API_BASE}/slides/${slideToDeleteId}`, { method: 'DELETE' });
+                if (res.ok) { 
+                    closeDeleteConfirmModal();
+                    await fetchData(); 
+                    renderView(); 
+                } else {
+                    alert("O'chirishda xatolik yuz berdi.");
+                }
+            } catch (e) { 
+                alert("Server xatosi!"); 
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                closeDeleteConfirmModal();
+            }
         }
 
         window.handleSlideImageUpload = async function(input) {
