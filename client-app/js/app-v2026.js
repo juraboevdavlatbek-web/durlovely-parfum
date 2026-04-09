@@ -824,6 +824,8 @@ async function fetchProducts() {
 // 2.10 Slider Logic
 let currentSlideIndex = 0;
 let slideInterval = null;
+let touchStartX = 0;
+let touchEndX = 0;
 
 window.renderSlider = function() {
     const container = document.getElementById('home-slider-container');
@@ -837,51 +839,142 @@ window.renderSlider = function() {
     }];
 
     container.innerHTML = `
-        <div class="slider-wrapper" style="height: 320px; position: relative; overflow: hidden; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+        <div class="slider-wrapper" id="main-slider" style="height: 320px; position: relative; overflow: hidden; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); touch-action: pan-y;">
             ${slidesToRender.map((s, i) => `
-                <div class="slide ${i === 0 ? 'active' : ''}" onclick='handleSlideClick(${JSON.stringify(s).replace(/'/g, "&apos;")})' style="position: absolute; inset: 0; transition: opacity 0.8s ease; opacity: ${i === 0 ? '1' : '0'}; z-index: ${i === 0 ? '5' : '1'};">
-                    <img src="${s.image}" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7);">
-                    <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, rgba(12,10,9,0.3) 50%, transparent 100%);"></div>
-                    <div style="position: absolute; bottom: 35px; left: 25px; right: 25px;">
+                <div class="slide ${i === 0 ? 'active' : ''}" style="position: absolute; inset: 0; transition: opacity 0.5s ease; opacity: ${i === 0 ? '1' : '0'}; z-index: ${i === 0 ? '5' : '1'}; cursor: pointer;">
+                    <img src="${s.image}" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); pointer-events: none;">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, rgba(12,10,9,0.3) 50%, transparent 100%); pointer-events: none;"></div>
+                    <div style="position: absolute; bottom: 35px; left: 25px; right: 25px; pointer-events: none;">
                         <span style="color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 8px; display: block;">Tavsiya qilamiz</span>
                         <h2 class="luxury-text" style="font-size: 2.2rem; line-height: 1.1; margin-bottom: 15px; color: #fff;">${s.title}</h2>
-                        <button class="btn-primary" style="padding: 10px 20px; font-size: 11px; border:none; border-radius: 8px;">KO'RISH</button>
+                        <button class="btn-primary" style="padding: 10px 20px; font-size: 11px; border:none; border-radius: 8px; pointer-events: auto;" onclick='event.stopPropagation(); handleSlideClick(${JSON.stringify(s).replace(/'/g, "&apos;")})'>KO'RISH</button>
                     </div>
                 </div>
             `).join('')}
+            
+            <!-- Manual Navigation Dots -->
             <div class="slider-dots" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10;">
                 ${slidesToRender.map((_, i) => `
-                    <div class="dot ${i === 0 ? 'active' : ''}" style="width: ${i === 0 ? '20px' : '6px'}; height: 6px; background: ${i === 0 ? 'var(--accent)' : 'rgba(255,255,255,0.3)'}; border-radius: 3px; transition: 0.3s;"></div>
+                    <div class="dot" onclick="event.stopPropagation(); window.goToSlide(${i})" style="width: ${i === 0 ? '20px' : '6px'}; height: 6px; background: ${i === 0 ? 'var(--accent)' : 'rgba(255,255,255,0.3)'}; border-radius: 3px; transition: 0.3s; cursor: pointer;"></div>
                 `).join('')}
             </div>
+            
+            <!-- Manual Navigation Arrows -->
+            <button onclick="event.stopPropagation(); window.prevSlide()" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(0,0,0,0.5); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-chevron-left"></i></button>
+            <button onclick="event.stopPropagation(); window.nextSlide()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(0,0,0,0.5); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     `;
+
+    // Add Swipe & Click Listeners
+    const sliderEl = document.getElementById('main-slider');
+    const slides = document.querySelectorAll('.slide');
+    
+    // Add click on entire slide (except buttons)
+    slides.forEach((sl, i) => {
+        sl.addEventListener('click', () => {
+             handleSlideClick(slidesToRender[i]);
+        });
+    });
+
+    sliderEl.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+        stopAutoSlide();
+    }, {passive: true});
+
+    sliderEl.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+        startAutoSlide();
+    }, {passive: true});
+
+    // Mouse drag support for desktop debugging
+    let isDragging = false;
+    let clickPrevented = false;
+    sliderEl.addEventListener('mousedown', e => {
+        isDragging = true;
+        clickPrevented = false;
+        touchStartX = e.clientX;
+        stopAutoSlide();
+    });
+    sliderEl.addEventListener('mousemove', e => {
+         if(isDragging && Math.abs(e.clientX - touchStartX) > 10) {
+             clickPrevented = true; 
+         }
+    });
+    sliderEl.addEventListener('mouseup', e => {
+        isDragging = false;
+        touchEndX = e.clientX;
+        if(clickPrevented) handleSwipe();
+        startAutoSlide();
+    });
+    sliderEl.addEventListener('mouseleave', e => {
+        if (isDragging) {
+            isDragging = false;
+            touchEndX = e.clientX;
+            handleSwipe();
+            startAutoSlide();
+        }
+    });
 
     currentSlideIndex = 0;
     startAutoSlide();
 };
 
+function handleSwipe() {
+    if (touchEndX < touchStartX - 50) window.nextSlide();
+    if (touchEndX > touchStartX + 50) window.prevSlide();
+}
+
+window.goToSlide = function(index) {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    if (!slides.length) return;
+
+    // Hide current
+    slides[currentSlideIndex].style.opacity = '0';
+    slides[currentSlideIndex].style.zIndex = '1';
+    dots[currentSlideIndex].style.width = '6px';
+    dots[currentSlideIndex].style.background = 'rgba(255,255,255,0.3)';
+
+    currentSlideIndex = index;
+
+    // Show new
+    slides[currentSlideIndex].style.opacity = '1';
+    slides[currentSlideIndex].style.zIndex = '5';
+    dots[currentSlideIndex].style.width = '20px';
+    dots[currentSlideIndex].style.background = 'var(--accent)';
+    
+    // Reset timer
+    startAutoSlide();
+}
+
+window.nextSlide = function() {
+    const slides = document.querySelectorAll('.slide');
+    if (!slides.length) return;
+    let nextIdx = (currentSlideIndex + 1) % slides.length;
+    window.goToSlide(nextIdx);
+}
+
+window.prevSlide = function() {
+    const slides = document.querySelectorAll('.slide');
+    if (!slides.length) return;
+    let prevIdx = (currentSlideIndex - 1 + slides.length) % slides.length;
+    window.goToSlide(prevIdx);
+}
+
 function startAutoSlide() {
-    if (slideInterval) clearInterval(slideInterval);
+    stopAutoSlide();
     if (allSlides.length <= 1) return;
-
     slideInterval = setInterval(() => {
-        const slides = document.querySelectorAll('.slide');
-        const dots = document.querySelectorAll('.dot');
-        if (!slides.length) return;
+        window.nextSlide();
+    }, 3000); // Changed to 3 seconds
+}
 
-        slides[currentSlideIndex].style.opacity = '0';
-        slides[currentSlideIndex].style.zIndex = '1';
-        dots[currentSlideIndex].style.width = '6px';
-        dots[currentSlideIndex].style.background = 'rgba(255,255,255,0.3)';
-
-        currentSlideIndex = (currentSlideIndex + 1) % slides.length;
-
-        slides[currentSlideIndex].style.opacity = '1';
-        slides[currentSlideIndex].style.zIndex = '5';
-        dots[currentSlideIndex].style.width = '20px';
-        dots[currentSlideIndex].style.background = 'var(--accent)';
-    }, 5000);
+function stopAutoSlide() {
+    if (slideInterval) {
+        clearInterval(slideInterval);
+        slideInterval = null;
+    }
 }
 
 window.handleSlideClick = function(slide) {
