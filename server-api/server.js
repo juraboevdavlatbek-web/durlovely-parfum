@@ -1,4 +1,4 @@
-// Last Update: 2026-04-12 20:30 (Force Re-deploy v2.5.3 Extreme Robust Dur Fix)
+// Last Update: 2026-04-12 20:35 (Force Re-deploy v2.5.4 Auto-Merge & Normalization Fix)
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
@@ -6,6 +6,11 @@ const path = require('path');
 
 const BOT_TOKEN = '8060468556:AAFdv3dQ7kL-9BrAlx0HjFWfj4H9fIDFAeE';
 const ADMIN_CHAT_ID = 737113132; // Admin Telegram chat ID
+
+function normalizePhone(num) {
+    if (!num) return '';
+    return String(num).replace(/\D/g, ''); // Digits only
+}
 
 // Telegram Helper
 function sendTelegramMessage(chatId, text) {
@@ -513,9 +518,15 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.url.startsWith('/api/customers/check/phone/') && req.method === 'GET') {
-        const phone = req.url.split('/').pop().replace(/[^\d]/g, '');
-        const result = await dbRequest('findOne', 'customers', { filter: { phone: { $regex: phone } } });
-        const customer = result.document;
+        const phoneRaw = req.url.split('/').pop();
+        const phone = normalizePhone(decodeURIComponent(phoneRaw));
+        const result = await dbRequest('find', 'customers');
+        const allCusts = result.documents || [];
+        
+        // Find best match (prefer the one with dur > 0)
+        let customer = allCusts.find(c => normalizePhone(c.phone) === phone && (c.dur || 0) > 0);
+        if (!customer) customer = allCusts.find(c => normalizePhone(c.phone) === phone);
+        
         setJSON();
         if (customer && customer.isBlocked) {
             res.end(JSON.stringify({ found: true, blocked: true }));
@@ -581,28 +592,54 @@ const server = http.createServer(async (req, res) => {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
-            const customer = JSON.parse(body);
-            // Search strictly by phone so each unique number gets a distinct account
-            const search = await dbRequest('findOne', 'customers', { filter: { phone: customer.phone } });
+            const newCust = JSON.parse(body);
+            const phone = normalizePhone(newCust.phone);
             
+            const result = await dbRequest('find', 'customers');
+            const allCusts = result.documents || [];
+            
+            const duplicates = allCusts.filter(c => normalizePhone(c.phone) === phone || (c.tgId && c.tgId == newCust.tgId));
+            
+            let mainAccount = duplicates.find(d => (d.dur || 0) > 0) || duplicates[0];
+            
+            if (mainAccount) {
+                // If duplicates exist, merge them into mainAccount
+                if (duplicates.length > 1) {
+                    let totalDur = 0;
+                    let combinedHistory = [];
+                    for (let d of duplicates) {
+                        totalDur += (d.dur || 0);
+                        if (d.durHistory) combinedHistory = [...combinedHistory, ...d.durHistory];
+                        if (d.id !== mainAccount.id) {
+                            await dbRequest('deleteOne', 'customers', { filter: { id: d.id } });
+                        }
+                    }
+                    // Sort history by date descending
+                    combinedHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    mainAccount.dur = totalDur;
+                    mainAccount.durHistory = combinedHistory.slice(0, 50); // Keep last 50
+                    await dbRequest('updateOne', 'customers', { filter: { id: mainAccount.id }, update: { $set: { dur: totalDur, durHistory: mainAccount.durHistory } } });
+                    console.log(`[MERGE] Combined ${duplicates.length} accounts for ${phone}. Result: ${totalDur} Dur`);
+                }
+                
+                if (mainAccount.isBlocked) {
+                    res.end(JSON.stringify({ success: false, blocked: true }));
+                    return;
+                }
+                res.end(JSON.stringify({ success: true, customer: mainAccount }));
+            } else {
+                // Create new
+                newCust.id = Date.now();
+                newCust.dateJoined = new Date().toLocaleDateString();
+                newCust.dur = 0;
+                newCust.durHistory = [];
+                newCust.isVip = false;
+                newCust.isBlocked = false;
+                await dbRequest('insertOne', 'customers', { document: newCust });
+                res.end(JSON.stringify({ success: true, customer: newCust }));
+            }
             setJSON();
-            if (search.document && search.document.isBlocked) {
-                res.end(JSON.stringify({ success: false, blocked: true }));
-                return;
-            }
-
-            if (!search.document) {
-                customer.id = Date.now();
-                customer.dateJoined = new Date().toLocaleDateString();
-                customer.dur = 0;
-                customer.durHistory = [];
-                customer.isVip = false;
-                customer.isBlocked = false;
-                await dbRequest('insertOne', 'customers', { document: customer });
-            } else if (customer.tgId) {
-                await dbRequest('updateOne', 'customers', { filter: { id: search.document.id }, update: { $set: { tgId: customer.tgId } } });
-            }
-            res.end(JSON.stringify({ success: true }));
         });
         return;
     }

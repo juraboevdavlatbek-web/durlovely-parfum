@@ -1512,17 +1512,21 @@ window.updateDurBox = function() {
     
     console.log(`[DUR] Attempting to find customer for: ${userAuth} (Clean: ${cleanAuth})`);
     
-    const customer = allCustomers.find(c => {
+    const matches = allCustomers.filter(c => {
         const cleanCustomerPhone = (c.phone || '').replace(/\D/g, '');
         // Match by clean phone OR tgId
         return (cleanAuth !== '' && cleanAuth === cleanCustomerPhone) || 
                (c.tgId && String(c.tgId) === String(userAuth));
     });
     
-    if (!customer) {
+    if (matches.length === 0) {
         console.warn("[DUR] User not found in allCustomers. List size:", allCustomers.length);
         return;
     }
+
+    // Prefer account with highest points
+    matches.sort((a, b) => (b.dur || 0) - (a.dur || 0));
+    const customer = matches[0];
 
     const dur = customer.dur || 0;
     console.log(`[DUR] Found customer! Balance: ${dur}`);
