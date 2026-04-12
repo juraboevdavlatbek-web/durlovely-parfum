@@ -1095,21 +1095,11 @@
             } catch (e) { alert("Xatolik!"); }
         }
 
-        window.deleteCustomerPro = async function() {
-            if (!confirm("Mijozni barcha ma'lumotlari bilan butunlay o'chirilsinmi? Bu amalni ortga qaytarib bo'lmaydi!")) return;
-            try {
-                // Ensure ID is treated as a string for robust deletion
-                const custId = String(currentProCust.id);
-                const res = await fetch(`${API_BASE}/customers/${custId}`, { method: 'DELETE' });
-                if (res.ok) { 
-                    alert("Mijoz o'chirildi."); 
-                    await fetchData(); 
-                    closeProModal(); 
-                    renderView(); 
-                } else {
-                    alert("O'chirishda xatolik!");
-                }
-            } catch (e) { alert("Xatolik!"); }
+        let customerToDeleteId = null;
+
+        window.deleteCustomerPro = function() {
+            customerToDeleteId = String(currentProCust.id);
+            document.getElementById('delete-confirm-modal').style.display = 'flex';
         }
 
         window.toggleProSuspend = async function() {
@@ -1220,6 +1210,7 @@
         window.closeDeleteConfirmModal = function() {
             document.getElementById('delete-confirm-modal').style.display = 'none';
             slideToDeleteId = null;
+            customerToDeleteId = null;
         }
 
         window.deleteSlide = function(id) {
@@ -1228,18 +1219,26 @@
         }
 
         document.getElementById('confirm-delete-btn').onclick = async function() {
-            if (!slideToDeleteId) return;
             const btn = document.getElementById('confirm-delete-btn');
             const originalText = btn.innerText;
+            
+            let url = '';
+            if (slideToDeleteId) url = `${API_BASE}/slides/${slideToDeleteId}`;
+            else if (customerToDeleteId) url = `${API_BASE}/customers/${customerToDeleteId}`;
+            
+            if (!url) return;
+
             btn.innerText = "O'CHIRILMOQDA...";
             btn.disabled = true;
             
             try {
-                const res = await fetch(`${API_BASE}/slides/${slideToDeleteId}`, { method: 'DELETE' });
+                const res = await fetch(url, { method: 'DELETE' });
                 if (res.ok) { 
                     closeDeleteConfirmModal();
+                    if (customerToDeleteId) closeProModal();
                     await fetchData(); 
                     renderView(); 
+                    if (customerToDeleteId) alert("Mijoz o'chirildi.");
                 } else {
                     alert("O'chirishda xatolik yuz berdi.");
                 }
@@ -1248,7 +1247,6 @@
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
-                closeDeleteConfirmModal();
             }
         }
 
@@ -1296,6 +1294,8 @@
                 closeModal(); 
                 closePointsModal();
                 closeSlideModal();
+                closeProModal();
+                closeDeleteConfirmModal();
             }
         };
 
