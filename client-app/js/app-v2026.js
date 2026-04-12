@@ -1504,8 +1504,18 @@ window.updateDurBox = function() {
     const userAuth = localStorage.getItem('durlovely_user_auth');
     if (!userAuth) return;
     
-    const customer = allCustomers.find(c => c.phone === userAuth || (c.tgId && c.tgId == userAuth));
-    if (!customer) return;
+    // Normalize phone number for robust matching (remove +)
+    const cleanAuth = userAuth.replace('+', '');
+    
+    const customer = allCustomers.find(c => {
+        const cleanCustomerPhone = (c.phone || '').replace('+', '');
+        return cleanAuth === cleanCustomerPhone || (c.tgId && c.tgId == userAuth);
+    });
+    
+    if (!customer) {
+        console.warn("[DUR] User not found in allCustomers for balance update.");
+        return;
+    }
 
     const dur = customer.dur || 0;
     const durCountEl = document.getElementById('dur-count');
