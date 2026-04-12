@@ -1502,22 +1502,31 @@ const DUR_LEVELS = [
 
 window.updateDurBox = function() {
     const userAuth = localStorage.getItem('durlovely_user_auth');
-    if (!userAuth) return;
+    if (!userAuth) {
+        console.warn("[DUR] No userAuth found in localStorage.");
+        return;
+    }
     
-    // Normalize phone number for robust matching (remove +)
-    const cleanAuth = userAuth.replace('+', '');
+    // Normalize both for robust matching (digits only)
+    const cleanAuth = String(userAuth).replace(/\D/g, '');
+    
+    console.log(`[DUR] Attempting to find customer for: ${userAuth} (Clean: ${cleanAuth})`);
     
     const customer = allCustomers.find(c => {
-        const cleanCustomerPhone = (c.phone || '').replace('+', '');
-        return cleanAuth === cleanCustomerPhone || (c.tgId && c.tgId == userAuth);
+        const cleanCustomerPhone = (c.phone || '').replace(/\D/g, '');
+        // Match by clean phone OR tgId
+        return (cleanAuth !== '' && cleanAuth === cleanCustomerPhone) || 
+               (c.tgId && String(c.tgId) === String(userAuth));
     });
     
     if (!customer) {
-        console.warn("[DUR] User not found in allCustomers for balance update.");
+        console.warn("[DUR] User not found in allCustomers. List size:", allCustomers.length);
         return;
     }
 
     const dur = customer.dur || 0;
+    console.log(`[DUR] Found customer! Balance: ${dur}`);
+    
     const durCountEl = document.getElementById('dur-count');
     
     // Check for point increase
