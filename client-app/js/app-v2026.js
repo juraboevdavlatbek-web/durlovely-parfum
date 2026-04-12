@@ -266,7 +266,7 @@ const pages = {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">
                     <div class="liquid-glass" style="padding: 25px; border-radius: 24px; text-align: center; background: rgba(161,98,7,0.03); border-color: rgba(161,98,7,0.1);">
                         <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 700;">Balans</div>
-                        <div style="font-size: 22px; font-weight: 800; color: var(--accent);">0 <span style="font-size: 14px;">💎</span></div>
+                        <div style="font-size: 22px; font-weight: 800; color: var(--accent);" id="profile-dur-balance">0 <span style="font-size: 14px;">💎</span></div>
                     </div>
                     <div class="liquid-glass" style="padding: 25px; border-radius: 24px; text-align: center;">
                         <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 700;">Buyurtmalar</div>
@@ -346,6 +346,9 @@ window.navigate = async function(page) {
         
         // Render Dynamic Slider
         renderSlider();
+
+        // Refresh Loyalty Points
+        updateDurBox();
     }
 
     // Initialize Catalog if navigating to it
@@ -406,6 +409,12 @@ window.navigate = async function(page) {
                 if (vipBadge) vipBadge.style.display = 'none';
                 if (memberLevel) memberLevel.textContent = 'MEMBER';
                 if (vipJoin) vipJoin.style.display = 'block';
+            }
+
+            // Real points on profile
+            const profileDur = document.getElementById('profile-dur-balance');
+            if (profileDur) {
+                profileDur.innerHTML = `${(customerData.customer.dur || 0).toFixed(1)} <span style="font-size: 14px;">💎</span>`;
             }
             
             // Real order count
@@ -1508,6 +1517,11 @@ window.updateDurBox = function() {
     lastKnownDur = dur;
 
     if (durCountEl) durCountEl.innerText = dur.toFixed(1);
+
+    const profileDur = document.getElementById('profile-dur-balance');
+    if (profileDur) {
+        profileDur.innerHTML = `${dur.toFixed(1)} <span style="font-size: 14px;">💎</span>`;
+    }
 
     let currentLevel = DUR_LEVELS[0];
     for (let l of DUR_LEVELS) {
