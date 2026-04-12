@@ -904,14 +904,18 @@
             document.getElementById('pro-cust-phone').innerText = c.phone;
             
             // Badge & Summary
+            let statusText = 'FAOL';
             let badgeHtml = '<span class="status-badge status-paid">FAOL</span>';
+            
             if (c.isBlocked) {
+                statusText = 'BLOKLANGAN';
                 badgeHtml = '<span class="status-badge status-cancelled">BLOKLANGAN</span>';
             } else if (c.status === 'suspended') {
                 statusText = 'TO\'XTATIB QO\'YILGAN';
                 badgeHtml = '<span class="status-badge status-pending">TO\'XTATILGAN</span>';
             } else if (c.isVip) {
                 badgeHtml = '<span class="status-badge status-paid">VIP STATUS</span>';
+                statusText = 'VIP MIJOZ';
             }
 
             document.getElementById('pro-cust-badge').innerHTML = badgeHtml;
