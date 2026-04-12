@@ -356,12 +356,21 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.url.startsWith('/api/admin/customer-orders/') && req.method === 'GET') {
-        const identifier = decodeURIComponent(req.url.split('/').pop());
-        const result = await dbRequest('find', 'orders', { 
-            filter: { $or: [{ phone: identifier }, { customer: identifier }] } 
-        });
+        const rawId = decodeURIComponent(req.url.split('/').pop());
+        const cleanId = normalizePhone(rawId);
+        
+        const result = await dbRequest('find', 'orders');
+        const allOrders = result.documents || [];
+        
+        // Filter by normalized phone or exact id or tgId
+        const orders = allOrders.filter(o => 
+            normalizePhone(o.phone) === cleanId || 
+            String(o.tgId) === rawId ||
+            String(o.id) === rawId
+        );
+        
         setJSON();
-        res.end(JSON.stringify(result.documents || []));
+        res.end(JSON.stringify(orders));
         return;
     }
 
@@ -404,6 +413,7 @@ const server = http.createServer(async (req, res) => {
         const search = await dbRequest('findOne', 'orders', { filter: { id: id } });
         if (search.document) {
             const order = search.document;
+            await dbRequest('updateOne', 'orders', { filter: { id: id }, update: { $set: { paymentMethod: 'Naqd / Keyinroq' } } });
             if (order.tgId) {
                 sendTelegramMessage(order.tgId, `🛍 <b>Buyurtma #${order.id} qabul qilindi!</b>\n\nTo'lov turi: Naqd / Keyinroq.\nTez orada aloqaga chiqamiz. ✨`);
             }
@@ -440,6 +450,10 @@ const server = http.createServer(async (req, res) => {
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
             const { orderId, method, amount } = JSON.parse(body);
+            
+            // Update order with payment method
+            await dbRequest('updateOne', 'orders', { filter: { id: orderId }, update: { $set: { paymentMethod: method.toUpperCase() } } });
+            
             setJSON();
             
             if (method === 'click') {

@@ -860,24 +860,76 @@
 
         async function fetchProOrders(id) {
             const list = document.getElementById('pro-orders-list');
-            list.innerHTML = '<p style="color: #444; font-size: 11px;">Yuklanmoqda...</p>';
+            list.innerHTML = '<div style="padding: 20px; text-align: center;"><div class="premium-loader" style="width: 20px; height: 20px; border-width: 2px;"></div></div>';
             try {
-                const res = await fetch(`/api/admin/customer-orders/${id}`);
+                const res = await fetch(`/api/admin/customer-orders/${encodeURIComponent(id)}`);
                 const orders = await res.json();
-                if (orders.length === 0) {
-                    list.innerHTML = '<p style="color: #444; font-size: 11px;">Buyurtmalar yo\'q.</p>';
+                
+                if (!orders || orders.length === 0) {
+                    list.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #444;">
+                            <i class="fa-solid fa-box-open" style="font-size: 30px; margin-bottom: 15px; opacity: 0.3;"></i>
+                            <p style="font-size: 13px; font-weight: 500;">Hali buyurtmalar yo'q.</p>
+                        </div>
+                    `;
                     return;
                 }
-                list.innerHTML = orders.map(o => `
-                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
-                            <span>#${o.id}</span>
-                            <span>${o.total} UZS</span>
+
+                list.innerHTML = orders.reverse().map(o => {
+                    const statusClass = `status-${o.status}`;
+                    const statusLabel = o.status.toUpperCase();
+                    
+                    return `
+                        <div style="background: rgba(255,255,255,0.02); padding: 18px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                <div>
+                                    <span style="color: #444; font-size: 10px; font-weight: 800; letter-spacing: 0.1em;">BUYURTMA #${o.id}</span>
+                                    <div style="font-size: 11px; color: #888; margin-top: 2px;">${o.date}</div>
+                                </div>
+                                <span class="status-badge ${statusClass}" style="font-size: 9px; padding: 4px 8px;">${statusLabel}</span>
+                            </div>
+                            
+                            <div style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 12px;">
+                                <div style="font-size: 11px; color: #666; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-location-dot"></i> MANZIL
+                                </div>
+                                <div style="font-size: 12px; color: #eee; line-height: 1.4;">${o.address || 'Ko\'rsatilmagan'}</div>
+                            </div>
+
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 11px; color: #666; margin-bottom: 6px;">MAHSULOTLAR</div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    ${(o.items || []).map(i => `
+                                        <div style="font-size: 12px; color: #999; display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 4px; height: 4px; border-radius: 50%; background: var(--accent);"></div>
+                                            ${i}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.03);">
+                                <div>
+                                    <div style="font-size: 9px; color: #444; text-transform: uppercase;">To'lov</div>
+                                    <div style="font-size: 11px; color: var(--accent); font-weight: 700;">${o.paymentMethod || 'Tanlanmagan'}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 9px; color: #444; text-transform: uppercase;">Jami</div>
+                                    <div style="font-size: 15px; color: #fff; font-weight: 800;">${o.total} UZS</div>
+                                </div>
+                            </div>
                         </div>
-                        <div style="font-size: 10px; color: #666; margin-top: 5px;">${o.date} | ${o.status}</div>
+                    `;
+                }).join('');
+            } catch (e) { 
+                console.error("Fetch orders error:", e);
+                list.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #ef4444;">
+                        <i class="fa-solid fa-circle-exclamation" style="font-size: 20px; margin-bottom: 10px;"></i>
+                        <p style="font-size: 12px;">Yuklashda xatolik yuz berdi.</p>
                     </div>
-                `).join('');
-            } catch (e) { list.innerHTML = 'Xatolik!'; }
+                `; 
+            }
         }
 
         function renderDurHistory(history) {
