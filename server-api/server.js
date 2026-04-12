@@ -355,6 +355,16 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    if (req.url.startsWith('/api/admin/customer-orders/') && req.method === 'GET') {
+        const identifier = decodeURIComponent(req.url.split('/').pop());
+        const result = await dbRequest('find', 'orders', { 
+            filter: { $or: [{ phone: identifier }, { customer: identifier }] } 
+        });
+        setJSON();
+        res.end(JSON.stringify(result.documents || []));
+        return;
+    }
+
     if (req.url.startsWith('/api/orders') && req.method === 'GET') {
         const result = await dbRequest('find', 'orders');
         setJSON();

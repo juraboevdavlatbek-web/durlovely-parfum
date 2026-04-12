@@ -204,6 +204,42 @@
             cursor: pointer;
             font-weight: 600;
         }
+
+        /* Tabs System */
+        .modal-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #666;
+            padding: 8px 15px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            color: var(--accent);
+            background: rgba(161,98,7,0.1);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .history-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            font-size: 13px;
+        }
+        .history-amount { font-weight: 700; float: right; }
+        .amount-plus { color: #22c55e; }
+        .amount-minus { color: #ef4444; }
     </style>
 </head>
 <body>
@@ -294,21 +330,80 @@
         </div>
     </div>
 
-    <!-- Customer Points Modal -->
-    <div id="points-modal" class="modal-overlay">
-        <div class="modal-content" style="width: 320px;">
-            <h3 class="luxury-text" style="font-size: 1.2rem; margin-bottom: 20px;">Ballarni Tahrirlash</h3>
-            <form id="points-form">
-                <input type="hidden" id="cust-id">
+    <!-- Universal Pro Customer Modal -->
+    <div id="customer-pro-modal" class="modal-overlay">
+        <div class="modal-content" style="width: 550px; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                <div>
+                    <h3 class="luxury-text" id="pro-cust-name" style="font-size: 1.5rem; margin: 0;">Mijoz</h3>
+                    <p id="pro-cust-phone" style="font-size: 12px; color: #666; margin-top: 5px;"></p>
+                </div>
+                <div id="pro-cust-badge"></div>
+            </div>
+
+            <div class="modal-tabs">
+                <button class="tab-btn active" onclick="switchCustTab('tab-info', this)">INFO</button>
+                <button class="tab-btn" onclick="switchCustTab('tab-wallet', this)">HAMYON</button>
+                <button class="tab-btn" onclick="switchCustTab('tab-orders', this)">BUYURTMALAR</button>
+                <button class="tab-btn" onclick="switchCustTab('tab-control', this)">KONTROL</button>
+            </div>
+
+            <!-- Info Tab -->
+            <div id="tab-info" class="tab-content active">
                 <div class="form-group">
-                    <label>Mijoz ballari (Dur)</label>
-                    <input type="number" id="cust-dur" step="0.1" required>
+                    <label>F.I.SH</label>
+                    <input type="text" id="pro-name-input">
                 </div>
-                <div style="display: flex; gap: 15px; margin-top: 25px;">
-                    <button type="button" onclick="closePointsModal()" style="background: none; border: 1px solid var(--border); color: #888; flex: 1; padding: 10px; border-radius: 8px; cursor: pointer;">BEKOR</button>
-                    <button type="submit" class="btn-primary-old" style="flex: 1.5;">SAQLASH</button>
+                <div class="form-group">
+                    <label>Status (VIP)</label>
+                    <select id="pro-vip-input">
+                        <option value="false">Oddiy Mijoz</option>
+                        <option value="true">VIP A'zo</option>
+                    </select>
                 </div>
-            </form>
+                <button class="btn-primary-old" style="width: 100%; margin-top: 10px;" onclick="saveProCustInfo()">MA'LUMOTLARNI SAQLASH</button>
+            </div>
+
+            <!-- Wallet Tab -->
+            <div id="tab-wallet" class="tab-content">
+                <div style="background: rgba(161,98,7,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                    <div style="font-size: 11px; color: #666;">JORIY BALANS</div>
+                    <div style="font-size: 24px; font-weight: 800; color: var(--accent);" id="pro-dur-balance">0 DUR</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Balansni o'zgartirish (+/-)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="pro-dur-change" placeholder="Masalan: 5.5 yoki -2">
+                        <button class="btn-primary-old" style="white-space: nowrap;" onclick="adjustProDur()">O'ZGARTIRISH</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <label>Balans Tarixi</label>
+                    <div id="pro-dur-history" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px;"></div>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div id="tab-orders" class="tab-content">
+                <label>Buyurtmalar Tarixi</label>
+                <div id="pro-orders-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Real-time orders fetch -->
+                </div>
+            </div>
+
+            <!-- Control Tab -->
+            <div id="tab-control" class="tab-content">
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button id="pro-block-btn" class="btn-primary-old" style="background: #ef4444;" onclick="toggleProBlock()"></button>
+                    <button class="btn-exit" style="width: 100%;" onclick="deleteCustomerPro()">MIJOZNI BUTUNLAY O'CHIRISH</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
+                <button type="button" onclick="closeProModal()" style="background: none; border: 1px solid var(--border); color: #888; width: 100%; padding: 12px; border-radius: 10px; cursor: pointer;">YOPISH</button>
+            </div>
         </div>
     </div>
 
@@ -571,19 +666,22 @@
             container.innerHTML += `
                 <div class="stats-grid">
                     ${state.customers.length > 0 ? state.customers.map(c => `
-                        <div class="stat-card" style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                        <div class="stat-card" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; cursor: pointer; border: 1px solid ${c.isBlocked ? '#ef4444' : (c.isVip ? 'var(--accent)' : 'var(--border)')}" onclick='openProModal(${JSON.stringify(c).replace(/'/g, "&apos;")})'>
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent);">
-                                    <i class="fa-solid fa-user"></i>
+                                <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: ${c.isVip ? 'var(--accent)' : '#888'};">
+                                    <i class="fa-solid ${c.isBlocked ? 'fa-user-slash' : 'fa-user'}"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight: 600; font-size: 14px;">${c.firstName || 'Mijoz'}</div>
-                                    <div style="font-size: 11px; color: #666;">${c.phone}</div>
+                                    <div style="font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+                                        ${c.firstName || 'Mijoz'}
+                                        ${c.isVip ? '<span style="font-size: 8px; background: var(--accent); color: #000; padding: 2px 4px; border-radius: 4px;">VIP</span>' : ''}
+                                    </div>
+                                    <div style="font-size: 11px; color: ${c.isBlocked ? '#ef4444' : '#666'};">${c.phone}</div>
                                 </div>
                             </div>
                             <div style="text-align: right;">
                                 <div style="font-weight: 700; color: #fff; font-size: 16px;">${(c.dur || 0).toFixed(1)} <span style="font-size: 10px; color: var(--accent);">DUR</span></div>
-                                <button onclick='openPointsModal(${JSON.stringify(c).replace(/'/g, "&apos;")})' style="background: none; border: none; color: #888; font-size: 11px; cursor: pointer; text-decoration: underline;">O'zgartirish</button>
+                                <div style="font-size: 9px; color: #444; text-transform: uppercase;">PRO Boshqaruv</div>
                             </div>
                         </div>
                     `).join('') : '<p style="color: #666;">Hozircha mijozlar mavjud emas.</p>'}
@@ -717,30 +815,160 @@
         function closeModal() { document.getElementById('product-modal').style.display = 'none'; }
         function editProduct(p) { openProductModal(p); }
 
+        let currentProCust = null;
+
+        window.openProModal = async function(c) {
+            currentProCust = c;
+            const modal = document.getElementById('customer-pro-modal');
+            
+            // Header Info
+            document.getElementById('pro-cust-name').innerText = c.firstName || 'Mijoz';
+            document.getElementById('pro-cust-phone').innerText = c.phone;
+            document.getElementById('pro-cust-badge').innerHTML = c.isBlocked ? 
+                '<span class="status-badge status-cancelled">BLOKLANGAN</span>' : 
+                (c.isVip ? '<span class="status-badge status-paid">VIP STATUS</span>' : '<span class="status-badge status-pending">ODDIY</span>');
+
+            // Info Tab
+            document.getElementById('pro-name-input').value = c.firstName || '';
+            document.getElementById('pro-vip-input').value = (!!c.isVip).toString();
+
+            // Wallet Tab
+            document.getElementById('pro-dur-balance').innerText = `${(c.dur || 0).toFixed(1)} DUR`;
+            renderDurHistory(c.durHistory || []);
+
+            // Control Tab
+            document.getElementById('pro-block-btn').innerText = c.isBlocked ? 'BLOKDAN CHIQARISH' : 'MIJOZNI BLOKLASH';
+            document.getElementById('pro-block-btn').style.background = c.isBlocked ? '#22c55e' : '#ef4444';
+
+            // Reset Tabs
+            switchCustTab('tab-info', document.querySelector('.tab-btn'));
+            
+            modal.style.display = 'flex';
+
+            // Fetch Orders
+            fetchProOrders(c.phone || c.tgId);
+        }
+
+        window.closeProModal = () => document.getElementById('customer-pro-modal').style.display = 'none';
+
+        window.switchCustTab = function(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        async function fetchProOrders(id) {
+            const list = document.getElementById('pro-orders-list');
+            list.innerHTML = '<p style="color: #444; font-size: 11px;">Yuklanmoqda...</p>';
+            try {
+                const res = await fetch(`/api/admin/customer-orders/${id}`);
+                const orders = await res.json();
+                if (orders.length === 0) {
+                    list.innerHTML = '<p style="color: #444; font-size: 11px;">Buyurtmalar yo\'q.</p>';
+                    return;
+                }
+                list.innerHTML = orders.map(o => `
+                    <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
+                            <span>#${o.id}</span>
+                            <span>${o.total} UZS</span>
+                        </div>
+                        <div style="font-size: 10px; color: #666; margin-top: 5px;">${o.date} | ${o.status}</div>
+                    </div>
+                `).join('');
+            } catch (e) { list.innerHTML = 'Xatolik!'; }
+        }
+
+        function renderDurHistory(history) {
+            const list = document.getElementById('pro-dur-history');
+            if (!history.length) {
+                list.innerHTML = '<p style="padding: 20px; color: #444; font-size: 11px; text-align: center;">Tarix bo\'sh.</p>';
+                return;
+            }
+            list.innerHTML = history.map(h => `
+                <div class="history-item">
+                    <span class="history-amount ${h.amount > 0 ? 'amount-plus' : 'amount-minus'}">${h.amount > 0 ? '+' : ''}${h.amount}</span>
+                    <div style="font-weight: 600;">${h.reason}</div>
+                    <div style="font-size: 10px; color: #444; margin-top: 3px;">${h.date}</div>
+                </div>
+            `).join('');
+        }
+
+        window.saveProCustInfo = async function() {
+            const name = document.getElementById('pro-name-input').value;
+            const isVip = document.getElementById('pro-vip-input').value === 'true';
+            
+            try {
+                const res = await fetch(`${API_BASE}/customers/${currentProCust.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName: name, isVip: isVip })
+                });
+                if (res.ok) { alert("Saqlandi!"); await fetchData(); closeProModal(); renderView(); }
+            } catch (e) { alert("Xatolik!"); }
+        }
+
+        window.adjustProDur = async function() {
+            const change = parseFloat(document.getElementById('pro-dur-change').value);
+            if (isNaN(change)) return;
+
+            const newDur = (currentProCust.dur || 0) + change;
+            const history = currentProCust.durHistory || [];
+            history.unshift({
+                reason: `Admin tomonidan tuzatish (${change > 0 ? '+' : ''}${change})`,
+                amount: change,
+                date: new Date().toLocaleString()
+            });
+
+            try {
+                const res = await fetch(`${API_BASE}/customers/${currentProCust.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dur: newDur, durHistory: history.slice(0, 50) })
+                });
+                if (res.ok) { 
+                    document.getElementById('pro-dur-change').value = '';
+                    await fetchData(); 
+                    // Update local view
+                    const updated = state.customers.find(c => c.id === currentProCust.id);
+                    openProModal(updated);
+                    renderView(); 
+                }
+            } catch (e) { alert("Xatolik!"); }
+        }
+
+        window.toggleProBlock = async function() {
+            const newBlockState = !currentProCust.isBlocked;
+            try {
+                const res = await fetch(`${API_BASE}/customers/${currentProCust.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isBlocked: newBlockState })
+                });
+                if (res.ok) { await fetchData(); closeProModal(); renderView(); }
+            } catch (e) { alert("Xatolik!"); }
+        }
+
+        window.deleteCustomerPro = async function() {
+            if (!confirm("Mijozni barcha ma'lumotlari bilan butunlay o'chirilsinmi? Bu amalni ortga qaytarib bo'lmaydi!")) return;
+            try {
+                const res = await fetch(`${API_BASE}/customers/${currentProCust.id}`, { method: 'DELETE' });
+                if (res.ok) { await fetchData(); closeProModal(); renderView(); }
+            } catch (e) { alert("Xatolik!"); }
+        }
+
         function openPointsModal(c) {
-            document.getElementById('cust-id').value = c.id;
-            document.getElementById('cust-dur').value = c.dur || 0;
-            document.getElementById('points-modal').style.display = 'flex';
+            // Deprecated by Pro Modal
+            openProModal(c);
         }
 
         function closePointsModal() {
-            document.getElementById('points-modal').style.display = 'none';
+            // Deprecated by Pro Modal
         }
 
-        document.getElementById('points-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('cust-id').value;
-            const dur = parseFloat(document.getElementById('cust-dur').value);
-            
-            try {
-                const res = await fetch(`${API_BASE}/customers/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ dur })
-                });
-                if (res.ok) { closePointsModal(); await fetchData(); renderView(); }
-            } catch (e) { alert("Xatolik!"); }
-        };
+        // Deprecated legacy subimt
+        // document.getElementById('points-form').onsubmit = async (e) => { ... }
 
         async function handleImageUpload(input) {
             if (!input.files || !input.files[0]) return;
