@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DURLOVELY | Admin Panel <!-- v2.4 --></title>
+    <title>DURLOVELY | Admin Panel <!-- v2.5.6 --></title>
     <link rel="stylesheet" href="/shared-assets/css/main-v2026.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -393,9 +393,9 @@
                     <div class="pro-actions-wrapper">
                         <button class="dots-btn" onclick="toggleProDropdown(event)"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                         <div id="pro-dropdown" class="dropdown-menu">
-                            <button onclick="toggleProBlock()"><i class="fa-solid fa-ban"></i> <span id="menu-block-text">Bloklash</span></button>
-                            <button onclick="toggleProSuspend()"><i class="fa-solid fa-pause"></i> <span id="menu-suspend-text">To'xtatib qo'yish</span></button>
-                            <button class="danger" onclick="deleteCustomerPro()"><i class="fa-solid fa-trash"></i> Butunlay o'chirish</button>
+                            <button onclick="toggleProBlock(event)"><i class="fa-solid fa-ban"></i> <span id="menu-block-text">Bloklash</span></button>
+                            <button onclick="toggleProSuspend(event)"><i class="fa-solid fa-pause"></i> <span id="menu-suspend-text">To'xtatib qo'yish</span></button>
+                            <button class="danger" onclick="deleteCustomerPro(event)"><i class="fa-solid fa-trash"></i> Butunlay o'chirish</button>
                         </div>
                     </div>
                 </div>
@@ -455,14 +455,19 @@
 
             <!-- Control Tab -->
             <div id="tab-control" class="tab-content">
-                <div style="background: rgba(255,255,255,0.02); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid var(--border);">
+                <div style="background: rgba(255,255,255,0.02); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid var(--border); margin-bottom: 20px;">
                     <i class="fa-solid fa-shield-halved" style="font-size: 30px; color: var(--accent); margin-bottom: 15px; opacity: 0.5;"></i>
                     <h4 class="luxury-text" style="margin-bottom: 10px; font-size: 1.1rem;">Hisob Xavfsizligi</h4>
-                    <p style="font-size: 12px; color: #666; line-height: 1.5;">Bu bo'limda mijozning faolligini nazorat qilishingiz mumkin. Kengaytirilgan amallar uchun yuqori o'ng burchakdagi <b>uch nuqta</b> menyusidan foydalaning.</p>
-                    
-                    <div id="pro-status-summary" style="margin-top: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent);">
-                        Status: FAOLLASHTIRILGAN
-                    </div>
+                    <p style="font-size: 12px; color: #666; line-height: 1.5;">Bu yerda mijoz hisobini boshqarishingiz mumkin.</p>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn-primary-old" id="pro-block-btn-main" onclick="toggleProBlock(event)" style="width: 100%; border-radius: 12px; height: 50px;">MIJOZNI BLOKLASH</button>
+                    <button class="btn-secondary-pro" onclick="deleteCustomerPro(event)" style="width: 100%; padding: 15px; border-radius: 12px; border: 1px solid rgba(239,68,68,0.2); background: rgba(239,68,68,0.05); color: #ef4444; font-weight: 700; cursor: pointer;">MIJOZNI BUTUNLAY O'CHIRISH</button>
+                </div>
+
+                <div id="pro-status-summary" style="margin-top: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); text-align: center;">
+                    Status: FAOLLASHTIRILGAN
                 </div>
             </div>
 
@@ -886,16 +891,21 @@
             currentProCust = c;
             const modal = document.getElementById('customer-pro-modal');
             
+            // Control Tab
+            const blockBtn = document.getElementById('pro-block-btn-main');
+            if (blockBtn) {
+                blockBtn.innerText = c.isBlocked ? 'BLOKDAN CHIQARISH' : 'MIJOZNI BLOKLASH';
+                blockBtn.style.background = c.isBlocked ? '#22c55e' : 'var(--accent)';
+            }
+            document.getElementById('pro-status-summary').innerText = `Status: ${c.isBlocked ? 'BLOKLANGAN' : (c.status === 'suspended' ? 'TO\'XTATILGAN' : 'FAOL')}`;
+
             // Header Info
             document.getElementById('pro-cust-name').innerText = c.firstName || 'Mijoz';
             document.getElementById('pro-cust-phone').innerText = c.phone;
             
             // Badge & Summary
-            let statusText = 'FAOLLASHTIRILGAN';
             let badgeHtml = '<span class="status-badge status-paid">FAOL</span>';
-            
             if (c.isBlocked) {
-                statusText = 'BLOKLANGAN';
                 badgeHtml = '<span class="status-badge status-cancelled">BLOKLANGAN</span>';
             } else if (c.status === 'suspended') {
                 statusText = 'TO\'XTATIB QO\'YILGAN';
@@ -1083,7 +1093,8 @@
             } catch (e) { alert("Xatolik!"); }
         }
 
-        window.toggleProBlock = async function() {
+        window.toggleProBlock = async function(e) {
+            if (e) e.stopPropagation();
             const newBlockState = !currentProCust.isBlocked;
             try {
                 const res = await fetch(`${API_BASE}/customers/${currentProCust.id}`, {
@@ -1097,12 +1108,14 @@
 
         let customerToDeleteId = null;
 
-        window.deleteCustomerPro = function() {
+        window.deleteCustomerPro = function(e) {
+            if (e) e.stopPropagation();
             customerToDeleteId = String(currentProCust.id);
             document.getElementById('delete-confirm-modal').style.display = 'flex';
         }
 
-        window.toggleProSuspend = async function() {
+        window.toggleProSuspend = async function(e) {
+            if (e) e.stopPropagation();
             const isSuspended = currentProCust.status === 'suspended';
             const newStatus = isSuspended ? 'active' : 'suspended';
             try {
@@ -1291,6 +1304,8 @@
 
         window.onclick = (e) => { 
             if (e.target.classList.contains('modal-overlay')) {
+                // If it's the delete confirm modal, only close it and its parent if explicitly requested
+                // but usually clicking outside overlay should close things.
                 closeModal(); 
                 closePointsModal();
                 closeSlideModal();
@@ -1298,6 +1313,11 @@
                 closeDeleteConfirmModal();
             }
         };
+
+        // Add stopPropagation to all modal contents
+        document.querySelectorAll('.modal-content').forEach(mc => {
+            mc.onclick = (e) => e.stopPropagation();
+        });
 
         init();
     </script>
