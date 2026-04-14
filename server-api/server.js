@@ -739,10 +739,9 @@ const server = http.createServer(async (req, res) => {
 
     // API: Categories
     if (req.url.startsWith('/api/categories') && req.method === 'GET') {
-        const result = await dbRequest('find', 'categories');
-        setJSON();
-        const categoriesArray = (result.documents || []).map(c => c.name || c);
-        res.end(JSON.stringify(categoriesArray.length ? categoriesArray : ['Erkaklar', 'Ayollar', 'Uniseks']));
+        // Enforce the canonical categories requested by the user
+        const canonicalCategories = ['Erkaklar', 'Ayollar', 'Uniseks'];
+        res.end(JSON.stringify(canonicalCategories));
         return;
     }
 

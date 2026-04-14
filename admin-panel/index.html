@@ -871,8 +871,7 @@
         function openProductModal(p = null) {
             const modal = document.getElementById('product-modal');
             const catSelect = document.getElementById('p-category');
-            const defaultCats = ['Erkaklar', 'Ayollar', 'Uniseks'];
-            catSelect.innerHTML = defaultCats.map(c => `<option value="${c}">${c}</option>`).join('');
+            catSelect.innerHTML = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
             
             if (p) {
                 document.getElementById('modal-title').innerText = "Tahrirlash";
