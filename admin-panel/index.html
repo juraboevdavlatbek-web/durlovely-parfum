@@ -433,9 +433,10 @@
                 
                 <div class="form-group">
                     <label>Balansni o'zgartirish (+/-)</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="number" id="pro-dur-change" placeholder="Masalan: 5.5 yoki -2">
-                        <button class="btn-primary-old" style="white-space: nowrap;" onclick="adjustProDur()">O'ZGARTIRISH</button>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <input type="number" id="pro-dur-change" placeholder="Miqdori (masalan: 5.5)">
+                        <input type="text" id="pro-dur-reason" placeholder="O'zgartirish sababi (ixtiyoriy)">
+                        <button class="btn-primary-old" style="width: 100%; border-radius: 10px;" onclick="adjustProDur()">BALANSNI YANGILASH</button>
                     </div>
                 </div>
 
@@ -1070,12 +1071,14 @@
 
         window.adjustProDur = async function() {
             const change = parseFloat(document.getElementById('pro-dur-change').value);
+            const customReason = document.getElementById('pro-dur-reason').value.trim();
             if (isNaN(change)) return;
 
+            const finalReason = customReason || `Admin tomonidan tuzatish (${change > 0 ? '+' : ''}${change})`;
             const newDur = (currentProCust.dur || 0) + change;
             const history = currentProCust.durHistory || [];
             history.unshift({
-                reason: `Admin tomonidan tuzatish (${change > 0 ? '+' : ''}${change})`,
+                reason: finalReason,
                 amount: change,
                 date: new Date().toLocaleString()
             });
@@ -1084,10 +1087,18 @@
                 const res = await fetch(`${API_BASE}/customers/${currentProCust.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ dur: newDur, durHistory: history.slice(0, 50) })
+                    body: JSON.stringify({ 
+                        dur: newDur, 
+                        durHistory: history.slice(0, 50),
+                        _notification: { // Specialized flag for server to send TG message
+                            amount: change,
+                            reason: finalReason
+                        }
+                    })
                 });
                 if (res.ok) { 
                     document.getElementById('pro-dur-change').value = '';
+                    document.getElementById('pro-dur-reason').value = '';
                     await fetchData(); 
                     // Update local view
                     const updated = state.customers.find(c => c.id === currentProCust.id);

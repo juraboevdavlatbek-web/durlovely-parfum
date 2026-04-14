@@ -589,8 +589,26 @@ const server = http.createServer(async (req, res) => {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
-            const update = JSON.parse(body);
+            const updateData = JSON.parse(body);
+            const { _notification, ...update } = updateData;
+            
             await dbRequest('updateOne', 'customers', { filter: { id: id }, update: { $set: update } });
+            
+            // Handle specialized point adjustment notification
+            if (_notification) {
+                const custSearch = await dbRequest('findOne', 'customers', { filter: { id: id } });
+                if (custSearch.document && custSearch.document.tgId) {
+                    const c = custSearch.document;
+                    const sign = _notification.amount > 0 ? '+' : '';
+                    const emoji = _notification.amount > 0 ? '💎' : '📉';
+                    const msg = `${emoji} <b>Dur Balansingiz o'zgardi!</b>\n\n` + 
+                                `Miqdori: <b>${sign}${_notification.amount} DUR</b>\n` +
+                                `Sababi: <i>${_notification.reason}</i>\n\n` +
+                                `Joriy balansingiz: <b>${update.dur || c.dur} DUR</b> ✨`;
+                    sendTelegramMessage(c.tgId, msg);
+                }
+            }
+
             setJSON();
             res.end(JSON.stringify({ success: true }));
         });
