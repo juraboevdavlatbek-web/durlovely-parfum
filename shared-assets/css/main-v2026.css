@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,700;1,400&family=Jost:wght@300;400;500;600;700&family=Cormorant:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
 
 :root {
-    /* UI/UX Pro Max - Premium Palette */
+    /* DEFAULT: DARK THEME */
     --primary: #1C1917;
     --on-primary: #FFFFFF;
     --secondary: #44403C;
@@ -10,22 +10,38 @@
     --foreground: #FAFAF9;
     --muted: rgba(232, 236, 240, 0.1);
     --border: rgba(214, 211, 209, 0.2);
-    
-    /* Spacing Tokens */
+    --glass-bg: rgba(28, 25, 23, 0.7);
+    --glass-blur: blur(12px);
+}
+
+[data-theme="light"] {
+    /* PREMIUM LIGHT THEME */
+    --primary: #FFFFFF;
+    --on-primary: #1C1917;
+    --secondary: #D6D3D1;
+    --accent: #854D0E;
+    --background: #FAFAF9;
+    --foreground: #0C0A09;
+    --muted: rgba(0, 0, 0, 0.05);
+    --border: rgba(0, 0, 0, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.75);
+}
+
+:root {
+    /* Tokens */
     --space-xs: 4px;
     --space-sm: 8px;
     --space-md: 16px;
     --space-lg: 24px;
     --space-xl: 32px;
     
-    /* Animation & Transitions */
     --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: 400ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-liquid: 600ms cubic-bezier(0.4, 0, 0.2, 1);
-    
-    /* Effects */
-    --glass-bg: rgba(28, 25, 23, 0.7);
-    --glass-blur: blur(12px);
+}
+
+body {
+    transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 * {

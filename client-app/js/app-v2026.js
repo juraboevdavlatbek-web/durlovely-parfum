@@ -305,6 +305,20 @@ const pages = {
                         </div>
                         <i class="fa-solid fa-chevron-right" style="color: #444; font-size: 12px;"></i>
                     </div>
+                    <div class="liquid-glass" onclick="window.toggleTheme()" style="padding: 20px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-color: var(--accent); background: rgba(161,98,7,0.05); margin-top: 15px;">
+                        <div style="display: flex; align-items: center; gap: 18px;">
+                            <div id="theme-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(161,98,7,0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                                <i class="fa-solid fa-moon"></i>
+                            </div>
+                            <div style="text-align: left;">
+                                <div style="font-size: 15px; font-weight: 600;" id="theme-text">Tungi rejim</div>
+                                <div style="font-size: 11px; color: #888;">Kunduzgi rejimga o'tish</div>
+                            </div>
+                        </div>
+                        <div style="width: 44px; height: 24px; background: #333; border-radius: 12px; position: relative; border: 1px solid var(--border);">
+                            <div id="theme-toggle-dot" style="position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: all 0.3s ease;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- VIP Join Section (hidden for VIP users) -->
@@ -322,7 +336,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.6.2
+                    Joriy versiya: v2.7.0
                 </div>
             </div>
         </div>
@@ -1749,5 +1763,35 @@ async function updateClientContext(customer) {
             }
         }).catch(() => {});
 }
+
+window.toggleTheme = function() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('durlovely_theme', next);
+    
+    // Update Profile UI if present
+    const text = document.getElementById('theme-text');
+    const icon = document.querySelector('#theme-icon-box i');
+    const dot = document.getElementById('theme-toggle-dot');
+    
+    if (text) text.innerText = next === 'dark' ? 'Tungi rejim' : 'Kunduzgi rejim';
+    if (icon) {
+        icon.className = next === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+    }
+    if (dot) {
+        dot.style.left = next === 'dark' ? '2px' : '22px';
+    }
+
+    // Update TG Colors
+    if (tg && tg.setHeaderColor) {
+        const bg = next === 'dark' ? '#0c0a09' : '#fafaf9';
+        tg.setHeaderColor(bg);
+        tg.setBackgroundColor(bg);
+    }
+
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+};
 
 initApp();

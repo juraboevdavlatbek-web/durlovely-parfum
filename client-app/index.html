@@ -7,6 +7,12 @@
     <link rel="stylesheet" href="/shared-assets/css/main-v2026.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('durlovely_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 </head>
 <body>
 
@@ -327,6 +333,6 @@
         </div>
     </div>
 
-    <script src="js/app-v2026.js?v=2.6.2"></script>
+    <script src="js/app-v2026.js?v=2.7.0"></script>
 </body>
 </html>
