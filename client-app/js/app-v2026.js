@@ -336,7 +336,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.8.0
+                    Joriy versiya: v2.8.1
                 </div>
             </div>
         </div>
@@ -839,8 +839,8 @@ async function fetchProducts() {
                 if (scrollSection) scrollSection.style.display = 'none';
             }
 
-            // 2. Render Vertical Grid (Layout: grid or default)
-            const gridProducts = allProducts.filter(p => p.layout === 'grid' || !p.layout).reverse().slice(0, 12);
+            // 2. Render Vertical Grid (Layout: grid or default) - Limit to 10 products
+            const gridProducts = allProducts.filter(p => !p.layout || p.layout === 'grid').reverse().slice(0, 10);
             homeGrid.innerHTML = gridProducts.map(p => renderProductCard(p)).join('');
         }
     } catch (e) {

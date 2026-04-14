@@ -882,7 +882,8 @@
                 document.getElementById('p-category').value = p.category;
                 document.getElementById('p-stock').value = p.stock;
                 document.getElementById('p-image-url').value = p.image || '';
-                document.getElementById('p-layout').value = p.layout || 'grid';
+                const layoutSelect = document.getElementById('p-layout');
+                if (layoutSelect) layoutSelect.value = p.layout || 'grid';
             } else {
                 document.getElementById('modal-title').innerText = "Yangi Mahsulot";
                 document.getElementById('product-form').reset();

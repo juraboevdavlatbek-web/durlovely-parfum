@@ -300,19 +300,32 @@ button, a, .clickable {
 .horizontal-scroll-container::-webkit-scrollbar { display: none; }
 
 .scroll-item {
-    min-width: 140px;
-    max-width: 140px;
+    width: 140px !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
     flex-shrink: 0;
     scroll-snap-align: start;
+    display: inline-block;
 }
 
 .scroll-item .product-card {
-    height: 100%;
+    width: 100% !important;
+    height: auto;
+    margin: 0;
+}
+
+.scroll-item .product-image {
+    height: 140px; /* Square images for scroll */
 }
 
 .scroll-item .product-info h3 {
     font-size: 11px;
     margin-bottom: 2px;
+    height: 32px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .scroll-item .price-box {
