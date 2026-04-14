@@ -1419,11 +1419,25 @@ window.showDurHistory = function() {
 };
 
 window.showNotifications = function() {
+    const userAuth = localStorage.getItem('durlovely_user_auth');
+    const cleanAuth = userAuth ? String(userAuth).replace(/\D/g, '') : '';
+    const user = allCustomers.find(c => {
+        const cleanCustomerPhone = (c.phone || '').replace(/\D/g, '');
+        return (cleanAuth !== '' && cleanAuth === cleanCustomerPhone) || (c.tgId && String(c.tgId) === String(userAuth));
+    });
+
+    // Default to a small timestamp if user not found (though should not happen)
+    const registrationTime = user ? (user.id || 0) : 0;
+
     fetch(`${API_BASE}/notifications?v=${Date.now()}`)
         .then(res => res.json())
         .then(notifs => {
             const pageContent = document.getElementById('page-content');
             
+            // 0. Filter by registration date
+            // Only show notifications that were created on or after the user registered
+            notifs = notifs.filter(n => (n.id || 0) >= registrationTime);
+
             // 1. Sort newest first (assuming larger ID or date string)
             notifs.sort((a, b) => (b.id || 0) - (a.id || 0));
             
