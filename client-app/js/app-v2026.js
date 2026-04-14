@@ -322,7 +322,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.6.0
+                    Joriy versiya: v2.6.1
                 </div>
             </div>
         </div>
@@ -1747,12 +1747,18 @@ async function updateClientContext(customer) {
 
     fetch(`${API_BASE}/notifications?v=${Date.now()}`)
         .then(res => res.json())
-        .then(notifs => {
-            if (notifs.length > 0) {
-                const badge = document.getElementById('notif-badge');
-                if (badge) badge.style.display = 'block';
+        .then(allNotifs => {
+            const registrationTime = Number(customer.id) || 0;
+            const readNotifs = JSON.parse(localStorage.getItem('durlovely_read_notifs') || '[]');
+            
+            // Filter: Created >= Registration AND ID NOT in ReadNotifs
+            const unreadCount = allNotifs.filter(n => (n.id || 0) >= registrationTime && !readNotifs.includes(n.id)).length;
+            
+            const badge = document.getElementById('notif-badge');
+            if (badge) {
+                badge.style.display = unreadCount > 0 ? 'block' : 'none';
             }
-        });
+        }).catch(() => {});
 }
 
 initApp();
