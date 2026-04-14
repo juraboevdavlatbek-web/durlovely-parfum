@@ -336,7 +336,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.7.0
+                    Joriy versiya: v2.7.1
                 </div>
             </div>
         </div>
@@ -930,16 +930,22 @@ window.goToSlide = function(index) {
     // Hide current
     slides[currentSlideIndex].style.opacity = '0';
     slides[currentSlideIndex].style.zIndex = '1';
-    dots[currentSlideIndex].style.width = '6px';
-    dots[currentSlideIndex].style.background = 'rgba(255,255,255,0.3)';
+    
+    if (dots.length > 0 && dots[currentSlideIndex]) {
+        dots[currentSlideIndex].style.width = '6px';
+        dots[currentSlideIndex].style.background = 'rgba(255,255,255,0.3)';
+    }
 
     currentSlideIndex = index;
 
     // Show new
     slides[currentSlideIndex].style.opacity = '1';
     slides[currentSlideIndex].style.zIndex = '5';
-    dots[currentSlideIndex].style.width = '20px';
-    dots[currentSlideIndex].style.background = 'var(--accent)';
+    
+    if (dots.length > 0 && dots[currentSlideIndex]) {
+        dots[currentSlideIndex].style.width = '20px';
+        dots[currentSlideIndex].style.background = 'var(--accent)';
+    }
     
     // Reset timer
     startAutoSlide();
