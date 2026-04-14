@@ -281,6 +281,33 @@ button, a, .clickable {
     color: var(--accent);
 }
 
+/* Category Filter Pills */
+.category-btn {
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--secondary);
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    background: var(--muted);
+    border: 1px solid var(--border);
+}
+
+.category-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.category-btn.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px rgba(161, 98, 7, 0.3);
+}
+
 /* Product Cards & Grids */
 .product-grid {
     display: grid;

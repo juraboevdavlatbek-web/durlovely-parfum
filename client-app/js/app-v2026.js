@@ -52,10 +52,10 @@ const pages = {
             <!-- Categories Quick Filter -->
             <div style="display: flex; gap: 15px; padding: 30px 15px 20px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;">
                 <style>div::-webkit-scrollbar { display: none; }</style>
-                <div class="category-btn active" onclick="filterByCategory('Barchasi', this)" style="padding: 12px 24px; background: var(--accent); border-radius: 50px; color: #fff; font-size: 14px; white-space: nowrap; font-weight: 600; box-shadow: 0 8px 20px rgba(161,98,7,0.3); cursor: pointer;">Barchasi</div>
-                <div class="category-btn liquid-glass" onclick="filterByCategory('Erkaklar', this)" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500; cursor: pointer;">Erkaklar</div>
-                <div class="category-btn liquid-glass" onclick="filterByCategory('Ayollar', this)" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500; cursor: pointer;">Ayollar</div>
-                <div class="category-btn liquid-glass" onclick="filterByCategory('Uniseks', this)" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500; cursor: pointer;">Uniseks</div>
+                <div class="category-btn active" onclick="filterByCategory('Barchasi', this)">Barchasi</div>
+                <div class="category-btn" onclick="filterByCategory('Erkaklar', this)">Erkaklar</div>
+                <div class="category-btn" onclick="filterByCategory('Ayollar', this)">Ayollar</div>
+                <div class="category-btn" onclick="filterByCategory('Uniseks', this)">Uniseks</div>
             </div>
 
             <!-- Dur Box Gamification -->
@@ -827,19 +827,8 @@ window.filterByCategory = function(category, btn) {
     // Update active class UI
     document.querySelectorAll('.category-btn').forEach(b => {
         b.classList.remove('active');
-        b.classList.add('liquid-glass');
-        b.style.background = 'rgba(161,98,7,0.05)';
-        b.style.color = '#888';
-        b.style.boxShadow = 'none';
-        b.style.fontWeight = '500';
     });
-    
     btn.classList.add('active');
-    btn.classList.remove('liquid-glass');
-    btn.style.background = 'var(--accent)';
-    btn.style.color = '#fff';
-    btn.style.fontWeight = '600';
-    btn.style.boxShadow = '0 8px 20px rgba(161,98,7,0.3)';
 
     // Filter products
     let filtered = allProducts;
