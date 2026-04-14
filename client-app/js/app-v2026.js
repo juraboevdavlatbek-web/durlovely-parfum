@@ -10,6 +10,8 @@ if (tg) {
 }
 
 const API_BASE = '/api';
+window.__LAST_DUR = "0.0";
+window.__LAST_USER = null;
 
 window.showAlert = function(msg) {
     if (tg && tg.showAlert) tg.showAlert(msg);
@@ -36,7 +38,7 @@ const pages = {
                     <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
                 </div>
                 <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
-                <div style="position: absolute; right: 65px; top: 18px; font-size: 8px; color: #444; font-weight: 800;">v2.5.8</div>
+                <div style="position: absolute; right: 65px; top: 18px; font-size: 8px; color: #444; font-weight: 800;">v2.5.9</div>
                 <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
                     <i class="fa-regular fa-bell"></i>
                     <span id="notif-badge" style="position: absolute; top: 8px; right: 0; width: 8px; height: 8px; background: #a16207; border-radius: 50%; border: 2px solid #0c0a09; display: none;"></span>
@@ -331,6 +333,16 @@ window.navigate = async function(page) {
     
     // 1. Initial Render
     pageContent.innerHTML = pages[page];
+
+    // 1.5. Instant Restoration from Global Cache (Priority #1)
+    // This removes the 0.0 flicker during navigation
+    const durCountEl = document.getElementById('dur-count');
+    if (durCountEl && window.__LAST_DUR) {
+        durCountEl.innerText = window.__LAST_DUR;
+    }
+    if (page === 'profile' && window.__LAST_USER) {
+        populateProfileUI(window.__LAST_USER);
+    }
 
     // 2. Navigation Logic
     if (page === 'home') {
@@ -1509,6 +1521,8 @@ window.updateDurBox = function() {
     }
 
     const dur = customer.dur || 0;
+    window.__LAST_DUR = dur.toFixed(1);
+    window.__LAST_USER = customer;
     console.log(`[DUR] Found customer! Balance: ${dur}`);
     
     const durCountEl = document.getElementById('dur-count');
