@@ -52,10 +52,10 @@ const pages = {
             <!-- Categories Quick Filter -->
             <div style="display: flex; gap: 15px; padding: 30px 15px 20px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;">
                 <style>div::-webkit-scrollbar { display: none; }</style>
-                <div class="category-btn active" style="padding: 12px 24px; background: var(--accent); border-radius: 50px; color: #fff; font-size: 14px; white-space: nowrap; font-weight: 600; box-shadow: 0 8px 20px rgba(161,98,7,0.3);">Barchasi</div>
-                <div class="category-btn liquid-glass" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500;">Erkaklar</div>
-                <div class="category-btn liquid-glass" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500;">Ayollar</div>
-                <div class="category-btn liquid-glass" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500;">Uniseks</div>
+                <div class="category-btn active" onclick="filterByCategory('Barchasi', this)" style="padding: 12px 24px; background: var(--accent); border-radius: 50px; color: #fff; font-size: 14px; white-space: nowrap; font-weight: 600; box-shadow: 0 8px 20px rgba(161,98,7,0.3); cursor: pointer;">Barchasi</div>
+                <div class="category-btn liquid-glass" onclick="filterByCategory('Erkaklar', this)" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500; cursor: pointer;">Erkaklar</div>
+                <div class="category-btn liquid-glass" onclick="filterByCategory('Ayollar', this)" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500; cursor: pointer;">Ayollar</div>
+                <div class="category-btn liquid-glass" onclick="filterByCategory('Uniseks', this)" style="padding: 12px 24px; border-radius: 50px; color: #888; font-size: 14px; white-space: nowrap; font-weight: 500; cursor: pointer;">Uniseks</div>
             </div>
 
             <!-- Dur Box Gamification -->
@@ -362,11 +362,7 @@ window.navigate = async function(page) {
 
     // 2. Navigation Logic
     if (page === 'home') {
-        const homeGrid = document.getElementById('home-product-grid');
-        if (homeGrid && allProducts && allProducts.length > 0) {
-            const latest = [...allProducts].reverse().slice(0, 4);
-            homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
-        }
+        renderHomeGrids(allProducts);
         renderSlider();
         updateDurBox();
         setTimeout(updateDurBox, 100);
@@ -819,32 +815,75 @@ async function fetchProducts() {
         console.log(`[FETCH] Success! Received ${allProducts.length} products and ${allSlides.length} slides.`);
         
         // If navigating to home, refresh the grids
-        const homeGrid = document.getElementById('home-product-grid');
-        const homeScroll = document.getElementById('home-product-scroll');
-        const scrollSection = document.getElementById('home-scroll-section');
-
-        if (homeGrid) {
-            // 1. Render Scroll Section (Limited to 8)
-            const scrollProducts = allProducts.filter(p => p.layout === 'scroll').reverse().slice(0, 8);
-            if (scrollProducts.length > 0) {
-                if (scrollSection) scrollSection.style.display = 'block';
-                if (homeScroll) {
-                    homeScroll.innerHTML = scrollProducts.map(p => `
-                        <div class="scroll-item">
-                            ${renderProductCard(p)}
-                        </div>
-                    `).join('');
-                }
-            } else {
-                if (scrollSection) scrollSection.style.display = 'none';
-            }
-
-            // 2. Render Vertical Grid (Layout: grid or default) - Limit to 10 products
-            const gridProducts = allProducts.filter(p => !p.layout || p.layout === 'grid').reverse().slice(0, 10);
-            homeGrid.innerHTML = gridProducts.map(p => renderProductCard(p)).join('');
-        }
+        renderHomeGrids(allProducts);
     } catch (e) {
         console.error("[FETCH] Products/Slides Error:", e);
+    }
+}
+
+window.filterByCategory = function(category, btn) {
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    
+    // Update active class UI
+    document.querySelectorAll('.category-btn').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('liquid-glass');
+        b.style.background = 'rgba(161,98,7,0.05)';
+        b.style.color = '#888';
+        b.style.boxShadow = 'none';
+        b.style.fontWeight = '500';
+    });
+    
+    btn.classList.add('active');
+    btn.classList.remove('liquid-glass');
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.style.fontWeight = '600';
+    btn.style.boxShadow = '0 8px 20px rgba(161,98,7,0.3)';
+
+    // Filter products
+    let filtered = allProducts;
+    if (category !== 'Barchasi') {
+        filtered = allProducts.filter(p => p.category === category);
+    }
+    
+    // Re-render
+    renderHomeGrids(filtered);
+};
+
+function renderHomeGrids(productsToRender) {
+    const homeGrid = document.getElementById('home-product-grid');
+    const homeScroll = document.getElementById('home-product-scroll');
+    const scrollSection = document.getElementById('home-scroll-section');
+
+    if (homeGrid) {
+        // 1. Render Scroll Section (Limited to 8)
+        const scrollProducts = productsToRender.filter(p => p.layout === 'scroll').reverse().slice(0, 8);
+        if (scrollProducts.length > 0) {
+            if (scrollSection) scrollSection.style.display = 'block';
+            if (homeScroll) {
+                homeScroll.innerHTML = scrollProducts.map(p => `
+                    <div class="scroll-item">
+                        ${renderProductCard(p)}
+                    </div>
+                `).join('');
+            }
+        } else {
+            if (scrollSection) scrollSection.style.display = 'none';
+        }
+
+        // 2. Render Vertical Grid (Layout: grid or default) - Limit to 10 products
+        const gridProducts = productsToRender.filter(p => !p.layout || p.layout === 'grid').reverse().slice(0, 10);
+        homeGrid.innerHTML = gridProducts.map(p => renderProductCard(p)).join('');
+        
+        if (gridProducts.length === 0 && scrollProducts.length === 0) {
+            homeGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px 0; color: #444;">
+                    <i class="fa-solid fa-box-open" style="font-size: 40px; margin-bottom: 15px; opacity: 0.3;"></i>
+                    <p style="font-size: 14px;">Ushbu bo'limda mahsulotlar topilmadi.</p>
+                </div>
+            `;
+        }
     }
 }
 
