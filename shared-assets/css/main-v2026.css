@@ -281,6 +281,44 @@ button, a, .clickable {
     color: var(--accent);
 }
 
+/* Product Cards & Grids */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.horizontal-scroll-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 10px 0 20px 0;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar { display: none; }
+
+.scroll-item {
+    min-width: 140px;
+    max-width: 140px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+}
+
+.scroll-item .product-card {
+    height: 100%;
+}
+
+.scroll-item .product-info h3 {
+    font-size: 11px;
+    margin-bottom: 2px;
+}
+
+.scroll-item .price-box {
+    font-size: 13px;
+}
+
 .notif-meta {
     display: flex;
     justify-content: space-between;

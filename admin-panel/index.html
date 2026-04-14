@@ -362,6 +362,13 @@
                     <input type="number" id="p-stock" required>
                 </div>
                 <div class="form-group">
+                    <label>Bosh sahifada ko'rinishi</label>
+                    <select id="p-layout">
+                        <option value="grid">Vertikal (3 talik setka)</option>
+                        <option value="scroll">Gorizontal (Surgili ro'yxat)</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Mahsulot rasm URL</label>
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="p-image-url" placeholder="https://..." style="flex: 1;">
@@ -875,6 +882,7 @@
                 document.getElementById('p-category').value = p.category;
                 document.getElementById('p-stock').value = p.stock;
                 document.getElementById('p-image-url').value = p.image || '';
+                document.getElementById('p-layout').value = p.layout || 'grid';
             } else {
                 document.getElementById('modal-title').innerText = "Yangi Mahsulot";
                 document.getElementById('product-form').reset();
@@ -1191,7 +1199,8 @@
                 vip_price: parseInt(document.getElementById('p-vip-price').value),
                 category: document.getElementById('p-category').value,
                 stock: parseInt(document.getElementById('p-stock').value),
-                image: document.getElementById('p-image-url').value
+                image: document.getElementById('p-image-url').value,
+                layout: document.getElementById('p-layout').value
             };
 
             const url = id ? `${API_BASE}/products/${id}` : `${API_BASE}/products`;

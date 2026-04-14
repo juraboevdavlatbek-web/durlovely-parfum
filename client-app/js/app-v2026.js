@@ -336,7 +336,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.7.2
+                    Joriy versiya: v2.8.0
                 </div>
             </div>
         </div>
@@ -818,11 +818,30 @@ async function fetchProducts() {
         allSlides = sRes.ok ? await sRes.json() : [];
         console.log(`[FETCH] Success! Received ${allProducts.length} products and ${allSlides.length} slides.`);
         
-        // If navigating to home, refresh the grid
+        // If navigating to home, refresh the grids
         const homeGrid = document.getElementById('home-product-grid');
+        const homeScroll = document.getElementById('home-product-scroll');
+        const scrollSection = document.getElementById('home-scroll-section');
+
         if (homeGrid) {
-            const latest = [...allProducts].reverse().slice(0, 4);
-            homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
+            // 1. Render Scroll Section (Limited to 8)
+            const scrollProducts = allProducts.filter(p => p.layout === 'scroll').reverse().slice(0, 8);
+            if (scrollProducts.length > 0) {
+                if (scrollSection) scrollSection.style.display = 'block';
+                if (homeScroll) {
+                    homeScroll.innerHTML = scrollProducts.map(p => `
+                        <div class="scroll-item">
+                            ${renderProductCard(p)}
+                        </div>
+                    `).join('');
+                }
+            } else {
+                if (scrollSection) scrollSection.style.display = 'none';
+            }
+
+            // 2. Render Vertical Grid (Layout: grid or default)
+            const gridProducts = allProducts.filter(p => p.layout === 'grid' || !p.layout).reverse().slice(0, 12);
+            homeGrid.innerHTML = gridProducts.map(p => renderProductCard(p)).join('');
         }
     } catch (e) {
         console.error("[FETCH] Products/Slides Error:", e);
