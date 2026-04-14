@@ -36,7 +36,7 @@ const pages = {
                     <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
                 </div>
                 <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
-                <div style="position: absolute; right: 65px; top: 18px; font-size: 8px; color: #444; font-weight: 800;">v2.5.7</div>
+                <div style="position: absolute; right: 65px; top: 18px; font-size: 8px; color: #444; font-weight: 800;">v2.5.8</div>
                 <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
                     <i class="fa-regular fa-bell"></i>
                     <span id="notif-badge" style="position: absolute; top: 8px; right: 0; width: 8px; height: 8px; background: #a16207; border-radius: 50%; border: 2px solid #0c0a09; display: none;"></span>
@@ -317,7 +317,6 @@ const pages = {
                         </button>
                     </div>
                 </div>
-
                 <button class="btn-exit" style="width: 100%; margin-top: 50px; height: 55px; border-radius: 16px; border-color: rgba(239,68,68,0.2); color: #ef4444;" onclick="localStorage.clear(); location.reload();">
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
@@ -330,148 +329,98 @@ window.navigate = async function(page) {
     const pageContent = document.getElementById('page-content');
     if (!pageContent) return;
     
-    // Add temporary exit animation if needed, but smooth enough without it
+    // 1. Initial Render
     pageContent.innerHTML = pages[page];
 
+    // 2. Navigation Logic
     if (page === 'home') {
         const homeGrid = document.getElementById('home-product-grid');
-        console.log(`[NAV] Home Page. allProducts length: ${allProducts ? allProducts.length : 'NULL'}`);
         if (homeGrid && allProducts && allProducts.length > 0) {
-            // Show latest 4 products
             const latest = [...allProducts].reverse().slice(0, 4);
             homeGrid.innerHTML = latest.map(p => renderProductCard(p)).join('');
-            console.log(`[NAV] Rendered 4 product cards.`);
-        } else {
-            console.warn(`[NAV] Home grid not found or ALL_PRODUCTS empty! Grid: ${!!homeGrid}`);
         }
-        
-        // Render Dynamic Slider
         renderSlider();
-
-        // Refresh Loyalty Points (with small delay to ensure DOM is ready)
-        setTimeout(() => {
-            console.log("[NAV] Delayed updateDurBox for Home...");
-            updateDurBox();
-        }, 100);
+        updateDurBox();
+        setTimeout(updateDurBox, 100);
     }
 
-    // Initialize Catalog if navigating to it
-    if (page === 'catalog') {
-        searchProducts('');
-    }
+    if (page === 'catalog') searchProducts('');
+    if (page === 'likes') renderLikes();
+    if (page === 'cart') renderCart();
+    if (page === 'orders') renderOrdersHistory();
 
-    // Initialize Likes page
-    if (page === 'likes') {
-        renderLikes();
-    }
-    
-    // Initialize Cart if navigating to it
-    if (page === 'cart') {
-        renderCart();
-    }
-    
-    // ALWAYS update Dur and related UI after navigation
-    // This prevents the balance from resetting to 0.0 when switching pages
-    updateDurBox();
-
-    // Special logic for Profile page refresh
-    if (page === 'profile') {
+    // 3. Background Data Refresh for Balance/Profile
+    if (page === 'home' || page === 'profile') {
         const userAuth = localStorage.getItem('durlovely_user_auth');
         if (userAuth) {
-            const cleanAuth = String(userAuth).replace(/\D/g, '');
-            const user = allCustomers.find(c => {
-                const cleanCustomerPhone = (c.phone || '').replace(/\D/g, '');
-                return (cleanAuth !== '' && cleanAuth === cleanCustomerPhone) || (c.tgId && String(c.tgId) === String(userAuth));
-            });
-            if (user) {
-                const nameEl = document.getElementById('profile-user-name');
-                const idEl = document.getElementById('profile-user-id');
-                if (nameEl) nameEl.innerText = user.firstName || user.name || 'Foydalanuvchi';
-                if (idEl) idEl.innerText = `ID: ${String(user.id).slice(-8)}`;
-            }
-        }
-        
-        const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
-        const tgId = tgUser ? tgUser.id : 737113132;
-        
-        const nameEl = document.getElementById('profile-user-name');
-        if (nameEl && tgUser) {
-            const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-            nameEl.textContent = fullName || ('@' + tgUser.username) || 'Foydalanuvchi';
-        }
-        
-        // Set ID from Telegram user id
-        const idEl = document.getElementById('profile-user-id');
-        if (idEl) {
-            const idStr = String(tgId);
-            const formatted = idStr.replace(/(\d{3})(?=\d)/g, '$1 ');
-            idEl.textContent = 'ID: ' + formatted;
-        }
-        
-        // Fetch real data from backend
-        try {
-            const [customerRes, ordersRes] = await Promise.all([
-                fetch(`/api/customers/check/${tgId}`),
-                fetch('/api/orders')
-            ]);
-            const customerData = await customerRes.json();
-            const allOrders = await ordersRes.json();
-            
-            // VIP status from backend
-            const isVip = customerData.found && customerData.customer.isVip;
-            const vipBadge = document.getElementById('profile-vip-badge');
-            const memberLevel = document.getElementById('profile-member-level');
-            const vipJoin = document.getElementById('vip-join-section');
-            
-            if (isVip) {
-                if (vipBadge) vipBadge.style.display = 'block';
-                if (memberLevel) memberLevel.textContent = 'GOLD MEMBER';
-                if (vipJoin) vipJoin.style.display = 'none';
-            } else {
-                if (vipBadge) vipBadge.style.display = 'none';
-                if (memberLevel) memberLevel.textContent = 'MEMBER';
-                if (vipJoin) vipJoin.style.display = 'block';
-            }
-
-            // Real points on profile
-            const profileDur = document.getElementById('profile-dur-balance');
-            if (profileDur) {
-                profileDur.innerHTML = `${(customerData.customer.dur || 0).toFixed(1)} <span style="font-size: 14px;">💎</span>`;
-            }
-            
-            // Real order count
-            const userPhone = localStorage.getItem('durlovely_user_auth');
-            const myOrdersRes = await fetch(`${API_BASE}/orders/my?auth=${userPhone}&v=${Date.now()}`);
-            const myOrders = await myOrdersRes.json();
-            
-            const orderCountCard = document.querySelector('#page-content .animate-fluid [style*="Buyurtmalar"]').parentElement;
-            if (orderCountCard) {
-                orderCountCard.onclick = () => navigate('orders');
-                orderCountCard.style.cursor = 'pointer';
-                const countDiv = orderCountCard.querySelector('div:last-child');
-                if (countDiv) countDiv.innerHTML = `${myOrders.length} <span style="font-size: 14px; color: #444;">ta</span>`;
-            }
-        } catch(e) {
-            console.error('Profile data fetch error:', e);
+            fetch(`${API_BASE}/customers/check/phone/${encodeURIComponent(userAuth)}?v=${Date.now()}`)
+                .then(res => res.json())
+                .then(result => {
+                    if (result.found) {
+                        try {
+                            const idx = allCustomers.findIndex(c => c.id === result.customer.id);
+                            if (idx !== -1) allCustomers[idx] = result.customer;
+                            else allCustomers.push(result.customer);
+                        } catch(e) {}
+                        updateDurBox();
+                        if (page === 'profile') populateProfileUI(result.customer);
+                    }
+                }).catch(() => {});
         }
     }
 
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Update Nav Icons
+    // 4. Update Nav UI
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         const span = item.querySelector('span');
-        if (span && span.innerText.toLowerCase().includes(page)) {
+        if (span && (span.innerText.toLowerCase() === page.toLowerCase() || 
+            (page === 'likes' && span.innerText.toLowerCase().includes('tanlangan')))) {
             item.classList.add('active');
         }
     });
 
-    if (page === 'orders') renderOrdersHistory();
-
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
 };
+
+function populateProfileUI(customer) {
+    if (!customer) return;
+    const nameEl = document.getElementById('profile-user-name');
+    const idEl = document.getElementById('profile-user-id');
+    const durEl = document.getElementById('profile-dur-balance');
+    const vipBadge = document.getElementById('profile-vip-badge');
+    const memberLvl = document.getElementById('profile-member-level');
+    const vipJoin = document.getElementById('vip-join-section');
+    
+    if (nameEl) nameEl.innerText = customer.firstName || customer.name || 'Foydalanuvchi';
+    if (idEl) idEl.innerText = `ID: ${String(customer.id).replace(/(\d{3})(?=\d)/g, '$1 ')}`;
+    if (durEl) durEl.innerHTML = `${(customer.dur || 0).toFixed(1)} <span style="font-size: 14px;">💎</span>`;
+    
+    if (customer.isVip) {
+        if (vipBadge) vipBadge.style.display = 'block';
+        if (memberLvl) memberLvl.innerText = "VIP MEMBER";
+        if (vipJoin) vipJoin.style.display = 'none';
+    } else {
+        if (vipBadge) vipBadge.style.display = 'none';
+        if (memberLvl) memberLvl.innerText = (customer.dur || 0) > 100 ? "GOLD MEMBER" : "MEMBER";
+        if (vipJoin) vipJoin.style.display = 'block';
+    }
+
+    // Async Orders Count
+    fetch(`${API_BASE}/orders/my?auth=${customer.phone}`)
+        .then(res => res.json())
+        .then(orders => {
+            const stats = document.querySelectorAll('.liquid-glass');
+            stats.forEach(s => {
+                if (s.innerText.includes('Buyurtmalar')) {
+                    const countDiv = s.querySelector('div:last-child');
+                    if (countDiv) countDiv.innerHTML = `${orders.length} <span style="font-size: 14px; color: #444;">ta</span>`;
+                    s.style.cursor = 'pointer';
+                    s.onclick = () => navigate('orders');
+                }
+            });
+        }).catch(() => {});
+}
 
 async function renderOrdersHistory() {
     const list = document.getElementById('orders-history-list');
@@ -1536,33 +1485,28 @@ const DUR_LEVELS = [
     { lvl: 4, min: 400, max: 1000, reward: 'VIP STATUS', code: 'DURVIP' }
 ];
 
-window.updateDurBox = function() {
+window.getCurrentUser = function() {
     const userAuth = localStorage.getItem('durlovely_user_auth');
-    if (!userAuth) {
-        console.warn("[DUR] No userAuth found in localStorage.");
-        return;
-    }
+    if (!userAuth) return null;
     
-    // Normalize both for robust matching (digits only)
     const cleanAuth = String(userAuth).replace(/\D/g, '');
-    
-    console.log(`[DUR] Attempting to find customer for: ${userAuth} (Clean: ${cleanAuth})`);
-    
     const matches = allCustomers.filter(c => {
         const cleanCustomerPhone = (c.phone || '').replace(/\D/g, '');
-        // Match by clean phone OR tgId
         return (cleanAuth !== '' && cleanAuth === cleanCustomerPhone) || 
                (c.tgId && String(c.tgId) === String(userAuth));
     });
     
-    if (matches.length === 0) {
-        console.warn("[DUR] User not found in allCustomers. List size:", allCustomers.length);
+    if (matches.length === 0) return null;
+    matches.sort((a, b) => (b.dur || 0) - (a.dur || 0));
+    return matches[0];
+};
+
+window.updateDurBox = function() {
+    const customer = getCurrentUser();
+    if (!customer) {
+        console.warn("[DUR] No user found for updateDurBox.");
         return;
     }
-
-    // Prefer account with highest points
-    matches.sort((a, b) => (b.dur || 0) - (a.dur || 0));
-    const customer = matches[0];
 
     const dur = customer.dur || 0;
     console.log(`[DUR] Found customer! Balance: ${dur}`);
