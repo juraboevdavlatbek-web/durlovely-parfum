@@ -36,7 +36,7 @@ const pages = {
                     <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
                 </div>
                 <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
-                <div style="position: absolute; right: 65px; top: 18px; font-size: 8px; color: #444; font-weight: 800;">v2.5.5</div>
+                <div style="position: absolute; right: 65px; top: 18px; font-size: 8px; color: #444; font-weight: 800;">v2.5.7</div>
                 <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
                     <i class="fa-regular fa-bell"></i>
                     <span id="notif-badge" style="position: absolute; top: 8px; right: 0; width: 8px; height: 8px; background: #a16207; border-radius: 50%; border: 2px solid #0c0a09; display: none;"></span>
@@ -369,13 +369,31 @@ window.navigate = async function(page) {
     if (page === 'cart') {
         renderCart();
     }
+    
+    // ALWAYS update Dur and related UI after navigation
+    // This prevents the balance from resetting to 0.0 when switching pages
+    updateDurBox();
 
-    // Initialize Profile with dynamic data
+    // Special logic for Profile page refresh
     if (page === 'profile') {
+        const userAuth = localStorage.getItem('durlovely_user_auth');
+        if (userAuth) {
+            const cleanAuth = String(userAuth).replace(/\D/g, '');
+            const user = allCustomers.find(c => {
+                const cleanCustomerPhone = (c.phone || '').replace(/\D/g, '');
+                return (cleanAuth !== '' && cleanAuth === cleanCustomerPhone) || (c.tgId && String(c.tgId) === String(userAuth));
+            });
+            if (user) {
+                const nameEl = document.getElementById('profile-user-name');
+                const idEl = document.getElementById('profile-user-id');
+                if (nameEl) nameEl.innerText = user.firstName || user.name || 'Foydalanuvchi';
+                if (idEl) idEl.innerText = `ID: ${String(user.id).slice(-8)}`;
+            }
+        }
+        
         const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
         const tgId = tgUser ? tgUser.id : 737113132;
         
-        // Set name from Telegram
         const nameEl = document.getElementById('profile-user-name');
         if (nameEl && tgUser) {
             const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
