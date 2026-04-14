@@ -103,11 +103,12 @@ const pages = {
                     <i class="fa-solid fa-microphone" style="color: var(--accent); margin-left:10px; opacity: 0.5;"></i>
                 </div>
 
-                <!-- Gender Tabs -->
-                <div style="display: flex; gap: 10px; margin-bottom: 25px;">
-                    <button class="category-btn active" style="flex: 1; padding: 10px; background: var(--accent); border-radius: 12px; color: #fff; font-size: 12px; border:none;" onclick="searchProducts('')">Barchasi</button>
-                    <button class="category-btn" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; color: #888; font-size: 12px; border: 1px solid var(--border);" onclick="searchProducts('erkaklar')">Erkaklar</button>
-                    <button class="category-btn" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; color: #888; font-size: 12px; border: 1px solid var(--border);" onclick="searchProducts('ayollar')">Ayollar</button>
+                <div style="display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none;">
+                    <style>div::-webkit-scrollbar { display: none; }</style>
+                    <button class="category-btn active" style="flex: 1;" onclick="searchProducts('', this)">Barchasi</button>
+                    <button class="category-btn" style="flex: 1;" onclick="searchProducts('erkaklar', this)">Erkaklar</button>
+                    <button class="category-btn" style="flex: 1;" onclick="searchProducts('ayollar', this)">Ayollar</button>
+                    <button class="category-btn" style="flex: 1;" onclick="searchProducts('uniseks', this)">Uniseks</button>
                 </div>
             </div>
 
@@ -1084,14 +1085,24 @@ window.handleSlideClick = function(slide) {
     }, 50);
 };
 
-window.searchProducts = function(query) {
+window.searchProducts = function(query, btn = null) {
     const resultsContainer = document.getElementById('catalog-grid');
     if (!resultsContainer) return;
 
-    const filtered = allProducts.filter(p => 
-        p.name.toLowerCase().includes(query.toLowerCase()) || 
-        p.gender.toLowerCase().includes(query.toLowerCase())
-    );
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+    // UI State Update
+    if (btn) {
+        document.querySelectorAll('.catalog .category-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    const filtered = allProducts.filter(p => {
+        const cat = String(p.category || '').toLowerCase();
+        const name = String(p.name || '').toLowerCase();
+        const search = query.toLowerCase();
+        return name.includes(search) || cat.includes(search);
+    });
 
     resultsContainer.innerHTML = filtered.map(p => renderProductCard(p)).join('');
 };
