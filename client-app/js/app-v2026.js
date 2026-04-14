@@ -336,7 +336,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.7.1
+                    Joriy versiya: v2.7.2
                 </div>
             </div>
         </div>
@@ -847,12 +847,12 @@ window.renderSlider = function() {
     }];
 
     container.innerHTML = `
-        <div class="slider-wrapper" id="main-slider" style="height: 320px; position: relative; overflow: hidden; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); touch-action: pan-y;">
+        <div class="slider-wrapper" id="main-slider" style="height: 270px; position: relative; overflow: hidden; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); touch-action: pan-y;">
             ${slidesToRender.map((s, i) => `
                 <div class="slide ${i === 0 ? 'active' : ''}" style="position: absolute; inset: 0; transition: opacity 0.5s ease; opacity: ${i === 0 ? '1' : '0'}; z-index: ${i === 0 ? '5' : '1'}; cursor: pointer;">
                     <img src="${s.image}" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); pointer-events: none;">
                     <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, rgba(12,10,9,0.3) 50%, transparent 100%); pointer-events: none;"></div>
-                    <div style="position: absolute; bottom: 35px; left: 25px; right: 25px; pointer-events: none;">
+                    <div style="position: absolute; bottom: 25px; left: 25px; right: 25px; pointer-events: none;">
                         <span style="color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 8px; display: block;">Tavsiya qilamiz</span>
                         <h2 class="luxury-text" style="font-size: 2.2rem; line-height: 1.1; margin-bottom: 15px; color: #fff;">${s.title}</h2>
                         <button class="btn-primary" style="padding: 10px 20px; font-size: 11px; border:none; border-radius: 8px; pointer-events: auto;" onclick='event.stopPropagation(); handleSlideClick(${JSON.stringify(s).replace(/'/g, "&apos;")})'>KO'RISH</button>
