@@ -1,4 +1,4 @@
-// Last Update: 2026-04-14 20:16 (Force Re-deploy v2.5.8 Robust Balance Fix)
+// Last Update: 2026-04-14 20:25 (Force Re-deploy v2.5.9 Instant Restoration)
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
