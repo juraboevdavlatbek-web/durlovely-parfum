@@ -322,7 +322,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.6.1
+                    Joriy versiya: v2.6.2
                 </div>
             </div>
         </div>
@@ -845,17 +845,6 @@ window.renderSlider = function() {
                     </div>
                 </div>
             `).join('')}
-            
-            <!-- Manual Navigation Dots -->
-            <div class="slider-dots" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10;">
-                ${slidesToRender.map((_, i) => `
-                    <div class="dot" onclick="event.stopPropagation(); window.goToSlide(${i})" style="width: ${i === 0 ? '20px' : '6px'}; height: 6px; background: ${i === 0 ? 'var(--accent)' : 'rgba(255,255,255,0.3)'}; border-radius: 3px; transition: 0.3s; cursor: pointer;"></div>
-                `).join('')}
-            </div>
-            
-            <!-- Manual Navigation Arrows -->
-            <button onclick="event.stopPropagation(); window.prevSlide()" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(0,0,0,0.5); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-chevron-left"></i></button>
-            <button onclick="event.stopPropagation(); window.nextSlide()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(0,0,0,0.5); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     `;
 
