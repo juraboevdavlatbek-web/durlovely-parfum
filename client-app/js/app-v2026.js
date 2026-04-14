@@ -12,6 +12,8 @@ if (tg) {
 const API_BASE = '/api';
 window.__LAST_DUR = "0.0";
 window.__LAST_USER = null;
+window.__NAV_MAP = ['home', 'catalog', 'likes', 'cart', 'gift', 'profile'];
+window.__CURRENT_PAGE = 'home';
 
 window.showAlert = function(msg) {
     if (tg && tg.showAlert) tg.showAlert(msg);
@@ -345,13 +347,28 @@ const pages = {
 
 window.navigate = async function(page) {
     const pageContent = document.getElementById('page-content');
-    if (!pageContent) return;
+    if (!pageContent || window.__CURRENT_PAGE === page) return;
+
+    // 0. Directional Logic
+    const oldIdx = window.__NAV_MAP.indexOf(window.__CURRENT_PAGE);
+    const newIdx = window.__NAV_MAP.indexOf(page);
+    const direction = newIdx > oldIdx ? 'next' : 'prev';
+    window.__CURRENT_PAGE = page;
+
+    // 0.5 Haptic Feedback (Immediate)
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+
+    // 1. Exit Animation Trigger
+    pageContent.classList.remove('page-enter-right', 'page-enter-left', 'page-exit-left', 'page-exit-right');
+    pageContent.classList.add('page-transitioning', direction === 'next' ? 'page-exit-left' : 'page-exit-right');
+
+    // Wait for exit mid-point
+    await new Promise(r => setTimeout(r, 150));
     
-    // 1. Initial Render
+    // 2. Initial Render
     pageContent.innerHTML = pages[page];
 
-    // 1.5. Instant Restoration from Global Cache (Priority #1)
-    // This removes the 0.0 flicker during navigation
+    // 2.5. Instant Restoration from Global Cache
     const durCountEl = document.getElementById('dur-count');
     if (durCountEl && window.__LAST_DUR) {
         durCountEl.innerText = window.__LAST_DUR;
@@ -360,20 +377,46 @@ window.navigate = async function(page) {
         populateProfileUI(window.__LAST_USER);
     }
 
-    // 2. Navigation Logic
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
+    // 3. Navigation Logic (Page Specific)
     if (page === 'home') {
         renderHomeGrids(allProducts);
         renderSlider();
         updateDurBox();
         setTimeout(updateDurBox, 100);
     }
-
     if (page === 'catalog') searchProducts('');
     if (page === 'likes') renderLikes();
     if (page === 'cart') renderCart();
     if (page === 'orders') renderOrdersHistory();
 
-    // 3. Background Data Refresh for Balance/Profile
+    // 4. Entrance Animation Trigger
+    pageContent.classList.remove('page-exit-left', 'page-exit-right');
+    pageContent.classList.add(direction === 'next' ? 'page-enter-right' : 'page-enter-left');
+
+    // 5. Update Nav UI Class
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        const span = item.querySelector('span');
+        if (span) {
+            const txt = span.innerText.toLowerCase();
+            if (txt === page.toLowerCase() || 
+                (page === 'likes' && txt.includes('tanlangan')) ||
+                (page === 'cart' && txt === 'savatcha') ||
+                (page === 'gift' && txt === "sovg'a") ||
+                (page === 'profile' && txt === 'profil')) {
+                item.classList.add('active');
+            }
+        }
+    });
+
+    // 6. Cleanup
+    setTimeout(() => {
+        pageContent.classList.remove('page-transitioning', 'page-enter-right', 'page-enter-left');
+    }, 450);
+
+    // 7. Background Data Refresh
     if (page === 'home' || page === 'profile') {
         const userAuth = localStorage.getItem('durlovely_user_auth');
         if (userAuth) {
@@ -392,19 +435,6 @@ window.navigate = async function(page) {
                 }).catch(() => {});
         }
     }
-
-    // 4. Update Nav UI
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-        const span = item.querySelector('span');
-        if (span && (span.innerText.toLowerCase() === page.toLowerCase() || 
-            (page === 'likes' && span.innerText.toLowerCase().includes('tanlangan')))) {
-            item.classList.add('active');
-        }
-    });
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
 };
 
 function populateProfileUI(customer) {
