@@ -236,8 +236,21 @@ const server = http.createServer(async (req, res) => {
     // API: Products
     if (req.url.startsWith('/api/products') && req.method === 'GET') {
         const result = await dbRequest('find', 'products');
+        
+        // Performance Fix: Strip excessively large fields (e.g. accidental base64) to prevent 5.5MB payloads
+        const sanitizedDocs = (result.documents || []).map(doc => {
+            const cleanDoc = { ...doc };
+            for (let key in cleanDoc) {
+                if (typeof cleanDoc[key] === 'string' && cleanDoc[key].length > 10000) {
+                    console.log(`⚠️ Truncating huge field "${key}" in product ${doc.id}`);
+                    cleanDoc[key] = cleanDoc[key].substring(0, 100) + "... [truncated]";
+                }
+            }
+            return cleanDoc;
+        });
+
         setJSON();
-        res.end(JSON.stringify(result.documents || []));
+        res.end(JSON.stringify(sanitizedDocs));
         return;
     }
 

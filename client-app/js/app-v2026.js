@@ -1802,15 +1802,18 @@ async function initApp() {
         }
     }
 
-    // 2. DEFAULT ONBOARDING (Priority #2)
-    const userAgeVerified = localStorage.getItem('durlovely_age_verified_v2');
-    if (!userAgeVerified) {
-        showScreen('age-gate');
-    } else {
-        showScreen('security');
-    }
+    // 2. Start fetching products (non-blocking to prevent UI freeze)
+    fetchProducts();
     
-    await fetchProducts();
+    // 3. Auto-login or proceed to onboarding
+    const authPhone = localStorage.getItem('durlovely_user_auth');
+    if (authPhone) {
+        hideAllOnboarding();
+        mainApp.classList.remove('hide');
+        navigate('home');
+    } else {
+        showScreen('age-gate');
+    }
 }
 
 function hideAllOnboarding() {
