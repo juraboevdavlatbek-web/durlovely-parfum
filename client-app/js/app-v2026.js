@@ -34,15 +34,15 @@ const pages = {
     home: `
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <!-- Premium Header (v3.0) -->
-            <header style="padding: 20px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: rgba(12, 10, 9, 0.8); backdrop-filter: blur(20px); z-index: 100;">
-                <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: rgba(28,25,23,0.6); cursor: pointer;">
+            <header style="padding: 20px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--header-bg); backdrop-filter: blur(20px); z-index: 100;">
+                <div class="dur-balance liquid-glass" onclick="showDurHistory()" style="padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; border-color: rgba(161,98,7,0.3); background: var(--balance-bg); cursor: pointer;">
                     <div class="mini-pearl"></div>
-                    <span id="dur-count" style="font-weight: 700; font-size: 16px; color: #fff;">0.0</span>
+                    <span id="dur-count" style="font-weight: 700; font-size: 16px; color: var(--foreground);">0.0</span>
                 </div>
                 <div class="luxury-text gold-text" style="font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%);">DURLOVELY</div>
                 <div class="notifications" onclick="showNotifications()" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 24px; color: #888; position: relative; cursor: pointer;">
                     <i class="fa-regular fa-bell"></i>
-                    <span id="notif-badge" style="position: absolute; top: 8px; right: 0; width: 8px; height: 8px; background: #a16207; border-radius: 50%; border: 2px solid #0c0a09; display: none;"></span>
+                    <span id="notif-badge" style="position: absolute; top: 8px; right: 0; width: 8px; height: 8px; background: #a16207; border-radius: 50%; border: 2px solid var(--background); display: none;"></span>
                 </div>
             </header>
 
@@ -62,7 +62,7 @@ const pages = {
 
             <!-- Dur Box Gamification -->
             <div style="padding: 10px 15px 30px;">
-                <div id="dur-box-card" class="liquid-glass" onclick="openDurBox()" style="padding: 25px; border-radius: 28px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(28,25,23,1), rgba(161,98,7,0.15)); border-color: rgba(161,98,7,0.2); cursor: pointer;">
+                <div id="dur-box-card" class="liquid-glass" onclick="openDurBox()" style="padding: 25px; border-radius: 28px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; background: var(--durbox-bg); border-color: rgba(161,98,7,0.2); cursor: pointer;">
                     <div style="flex: 1;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                             <h3 class="luxury-text gold-text" style="font-size: 1.6rem;">Dur Box</h3>
@@ -148,7 +148,7 @@ const pages = {
                 <div id="cart-summary" class="liquid-glass" style="margin-top: 30px; padding: 20px; border-radius: 20px; border-color: var(--accent);">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <span style="color: #888;">Jami:</span>
-                        <span id="total-price" style="font-weight: 700; color: #fff;">0 UZS</span>
+                        <span id="total-price" style="font-weight: 700; color: var(--foreground);">0 UZS</span>
                     </div>
                     <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="showCheckout()">BUYURTMA BERISH</button>
                 </div>
@@ -185,14 +185,14 @@ const pages = {
                         <label class="liquid-glass" style="display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer;">
                             <input type="radio" name="delivery" value="quva" checked style="accent-color: var(--accent); width: 20px; height: 20px; margin-right: 15px;">
                             <div>
-                                <div style="font-size: 14px; font-weight: 600; color: #fff;">Quva Kuryer</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--foreground);">Quva Kuryer</div>
                                 <div style="font-size: 10px; color: #888;">Standard (24-48 soat) • 25,000 UZS</div>
                             </div>
                         </label>
                         <label class="liquid-glass" style="display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer;">
                             <input type="radio" name="delivery" value="emu" style="accent-color: var(--accent); width: 20px; height: 20px; margin-right: 15px;">
                             <div>
-                                <div style="font-size: 14px; font-weight: 600; color: #fff;">EMU Express</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--foreground);">EMU Express</div>
                                 <div style="font-size: 10px; color: #888;">Tezkor (Bugunning o'zida) • 45,000 UZS</div>
                             </div>
                         </label>
@@ -221,9 +221,9 @@ const pages = {
     orders: `
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <div style="padding: 25px 20px 10px; display: flex; align-items: center; gap: 15px;">
-                <button onclick="navigate('profile')" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: #fff;">
-                    <i class="fa-solid fa-arrow-left" style="font-size: 14px;"></i>
-                </button>
+                <div onclick="navigate('profile')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--muted); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <i class="fa-solid fa-arrow-left" style="font-size: 16px; color: var(--accent) !important;"></i>
+                </div>
                 <h2 class="luxury-text gold-text" style="font-size: 2rem;">Buyurtmalarim</h2>
             </div>
             <div id="orders-history-list" style="padding: 0 20px; display: flex; flex-direction: column; gap: 15px;">
@@ -260,7 +260,7 @@ const pages = {
                         <div>
                             <div style="font-size: 14px; font-weight: 500; color: #aaa; margin-bottom: 5px; font-family: 'Montserrat', sans-serif;" id="profile-user-name">Foydalanuvchi</div>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="font-size: 12px; font-weight: 600; color: #fff; opacity: 0.8; letter-spacing: 0.1em;" id="profile-user-id">ID: ...</div>
+                                <div style="font-size: 12px; font-weight: 600; color: var(--foreground); opacity: 0.6; letter-spacing: 0.1em;" id="profile-user-id">ID: ...</div>
                                 <div style="font-size: 10px; color: var(--accent); font-weight: 800;">DURLOVELY EXCLUSIVE</div>
                             </div>
                         </div>
@@ -275,7 +275,7 @@ const pages = {
                     </div>
                     <div class="liquid-glass" style="padding: 25px; border-radius: 24px; text-align: center;">
                         <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 700;">Buyurtmalar</div>
-                        <div style="font-size: 22px; font-weight: 800; color: #fff;">0 <span style="font-size: 14px; color: #444;">ta</span></div>
+                        <div style="font-size: 22px; font-weight: 800; color: var(--foreground);">0 <span style="font-size: 14px; color: #666;">ta</span></div>
                     </div>
                 </div>
 
@@ -507,7 +507,7 @@ async function renderOrdersHistory() {
             return `
                 <div class="liquid-glass animate-fluid" style="padding: 20px; border-radius: 20px; border-color: rgba(255,255,255,0.03);">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                        <span style="font-size: 14px; font-weight: 700; color: #fff;">Buyurtma #${o.id}</span>
+                        <span style="font-size: 14px; font-weight: 700; color: var(--foreground);">Buyurtma #${o.id}</span>
                         <span style="font-size: 11px; font-weight: 800; color: ${label.color}; text-transform: uppercase;">${label.text}</span>
                     </div>
                     <div style="font-size: 12px; color: #666; margin-bottom: 15px;">Sana: ${o.date}</div>
@@ -520,7 +520,7 @@ async function renderOrdersHistory() {
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px;">
                         <span style="font-size: 12px; color: #555;">Jami:</span>
-                        <span style="font-size: 16px; font-weight: 800; color: #fff;">${o.total} UZS</span>
+                        <span style="font-size: 16px; font-weight: 800; color: var(--foreground);">${o.total} UZS</span>
                     </div>
                 </div>
             `;
@@ -1140,10 +1140,10 @@ function renderProductCard(p) {
                     <i class="fa-${isLiked(p.id) ? 'solid' : 'regular'} fa-heart"></i>
                 </div>
             </div>
-            <h4 style="font-size: 14px; font-weight: 600; color: #fff; font-family: 'Montserrat', sans-serif;">${p.name}</h4>
+            <h4 style="font-size: 14px; font-weight: 600; color: var(--foreground); font-family: 'Montserrat', sans-serif;">${p.name}</h4>
             <p style="font-size: 11px; color: #888; margin: 4px 0 12px;">${p.category || 'Eau de Parfum'} • ${p.gender || 'Uniseks'}</p>
             <div style="display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 16px; font-weight: 700; color: #fff;">${formattedPrice} UZS</span>
+                <span style="font-size: 16px; font-weight: 700; color: var(--foreground);">${formattedPrice} UZS</span>
                 ${isVip ? `<span class="gold-text" style="font-size: 10px; font-weight: 800;">VIP CHEGIRMADA</span>` : `<span class="gold-text" style="font-size: 12px; font-weight: 600;">VIP: ${Number(p.vip_price || p.price * 0.8).toLocaleString()} UZS</span>`}
             </div>
             <button class="btn-primary" style="width: 100%; height: 38px; font-size: 11px; margin-top: 15px; border-radius: 12px;" onclick="event.stopPropagation(); addToCart(${p.id})">SAVATCHAGA</button>
@@ -1164,9 +1164,9 @@ window.showProductDetail = function(id) {
     const detailPage = `
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <div style="position: relative; height: 400px; overflow: hidden; border-radius: 0 0 40px 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
-                <button onclick="navigate('catalog')" style="position: absolute; top: 20px; left: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; color: #fff; border: 1px solid rgba(255,255,255,0.1); z-index: 10; font-size: 16px;">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
+                <div onclick="navigate('catalog')" style="position: absolute; top: 20px; left: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; color: var(--accent) !important; border: 1px solid rgba(255,255,255,0.2); z-index: 10; cursor: pointer;">
+                    <i class="fa-solid fa-arrow-left" style="font-size: 18px;"></i>
+                </div>
                 <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover;">
                 <div style="position: absolute; inset: 0; background: linear-gradient(0deg, rgba(12,10,9,1) 0%, transparent 50%);"></div>
             </div>
@@ -1179,7 +1179,7 @@ window.showProductDetail = function(id) {
                     </div>
                     <div style="text-align: right;">
                         <span style="display: block; font-size: 11px; color: #666; text-transform: uppercase;">Hajmi</span>
-                        <span style="font-size: 16px; font-weight: 700; color: #fff;">100 ml</span>
+                        <span style="font-size: 16px; font-weight: 700; color: var(--foreground);">100 ml</span>
                     </div>
                 </div>
 
@@ -1190,7 +1190,7 @@ window.showProductDetail = function(id) {
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding: 25px; border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);">
                     <div>
                         <span style="display: block; font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 8px;">Narxi</span>
-                        <span style="font-size: 24px; font-weight: 800; color: #fff;">${formattedPrice} <span style="font-size: 12px; color: #444;">UZS</span></span>
+                        <span style="font-size: 24px; font-weight: 800; color: var(--foreground);">${formattedPrice} <span style="font-size: 12px; color: #666;">UZS</span></span>
                         ${isVip ? `<div style="font-size: 11px; color: #666; margin-top: 4px; text-decoration: line-through;">${formattedOldPrice} UZS</div>` : ''}
                     </div>
                     <div style="text-align: right;">
@@ -1200,7 +1200,7 @@ window.showProductDetail = function(id) {
                 </div>
 
                 <div style="display: flex; gap: 15px;">
-                    <button class="liquid-glass" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px;" onclick="toggleLike(${p.id})">
+                    <button class="liquid-glass" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; color: var(--foreground); font-size: 20px;" onclick="toggleLike(${p.id})">
                         <i class="fa-${isLiked(p.id) ? 'solid' : 'regular'} fa-heart" style="${isLiked(p.id) ? 'color: #ef4444;' : ''}"></i>
                     </button>
                     <button class="btn-primary" style="flex: 1; height: 60px; font-size: 15px; border-radius: 20px;" onclick="addToCart(${p.id})">SAVATCHAGA QO'SHISH</button>
@@ -1271,12 +1271,12 @@ window.renderCart = function() {
                     <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
                 <div style="flex: 1;">
-                    <h4 style="font-size: 14px; font-weight: 600; color: #fff;">${item.name}</h4>
+                    <h4 style="font-size: 14px; font-weight: 600; color: var(--foreground);">${item.name}</h4>
                     <div style="color: var(--accent); font-weight: 700; margin-top: 5px;">${Number(parseInt(String(item.price).replace(/,/g, ''))).toLocaleString()} UZS</div>
                     <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
-                        <button onclick="updateQuantity(${item.id}, -1)" style="width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: none; color: #fff;">-</button>
+                        <button onclick="updateQuantity(${item.id}, -1)" style="width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: none; color: var(--foreground);">-</button>
                         <span style="font-weight: 600;">${item.quantity}</span>
-                        <button onclick="updateQuantity(${item.id}, 1)" style="width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: none; color: #fff;">+</button>
+                        <button onclick="updateQuantity(${item.id}, 1)" style="width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: none; color: var(--foreground);">+</button>
                     </div>
                 </div>
                 <button onclick="removeFromCart(${item.id})" style="background: none; border: none; color: #ef4444; font-size: 18px; padding: 10px;">
@@ -1468,22 +1468,24 @@ window.showDurHistory = function() {
     const pageContent = document.getElementById('page-content');
     pageContent.innerHTML = `
         <div class="animate-fluid" style="padding: 20px; padding-bottom: 120px;">
-            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 35px;">
-                <i class="fa-solid fa-arrow-left" onclick="navigate('home')" style="font-size: 20px; color: #fff; cursor: pointer;"></i>
-                <h2 class="luxury-text gold-text" style="font-size: 2rem;">Dur Tarixi</h2>
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 35px;">
+                <div onclick="navigate('home')" style="width: 42px; height: 42px; background: var(--muted); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <i class="fa-solid fa-arrow-left" style="font-size: 20px; color: var(--accent) !important;"></i>
+                </div>
+                <h2 class="luxury-text gold-text" style="font-size: 2rem; margin: 0;">Dur Tarixi</h2>
             </div>
             
-            <div class="liquid-glass" style="padding: 25px; border-radius: 28px; margin-bottom: 30px; text-align: center; background: linear-gradient(135deg, rgba(28,25,23,1), rgba(161,98,7,0.1));">
+            <div class="liquid-glass" style="padding: 25px; border-radius: 28px; margin-bottom: 30px; text-align: center; background: var(--durbox-bg);">
                 <div class="mini-pearl" style="width: 30px; height: 30px; margin-bottom: 15px;"></div>
                 <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px;">Umumiy Balans</div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: #fff;">${(customer && customer.dur ? customer.dur : 0).toFixed(1)} <span style="font-size: 1rem; color: var(--accent);">💎</span></div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: var(--foreground);">${(customer && customer.dur ? customer.dur : 0).toFixed(1)} <span style="font-size: 1rem; color: var(--accent);">💎</span></div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 ${history.length > 0 ? history.map(h => `
                     <div class="liquid-glass" style="padding: 18px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; border-color: rgba(255,255,255,0.03);">
                         <div style="flex: 1;">
-                            <div style="font-size: 15px; font-weight: 600; color: #fff;">${h.reason}</div>
+                            <div style="font-size: 15px; font-weight: 600; color: var(--foreground);">${h.reason}</div>
                             <div style="font-size: 11px; color: #444; margin-top: 4px; font-weight: 300;">${h.date}</div>
                         </div>
                         <div style="font-weight: 800; color: ${h.amount > 0 ? 'var(--accent)' : '#ef4444'}; font-size: 15px;">
@@ -1540,8 +1542,8 @@ window.showNotifications = function() {
                     <div style="position: relative; z-index: 1;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 35px;">
                             <div style="display: flex; align-items: center; gap: 20px;">
-                                <div onclick="navigate('home')" style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                    <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: #fff;"></i>
+                                <div onclick="navigate('home')" style="width: 42px; height: 42px; background: var(--muted); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                    <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: var(--accent) !important;"></i>
                                 </div>
                                 <h2 class="luxury-text gold-text" style="font-size: 2.2rem; margin: 0;">Xabarlar</h2>
                             </div>
