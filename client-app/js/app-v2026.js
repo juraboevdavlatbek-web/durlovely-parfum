@@ -1542,7 +1542,7 @@ window.showNotifications = function() {
                     <div style="position: relative; z-index: 1;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 35px;">
                             <div style="display: flex; align-items: center; gap: 20px;">
-                                <div onclick="navigate('home')" style="width: 42px; height: 42px; background: var(--muted); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <div onclick="navigate('home')" style="width: 44px; height: 44px; background: rgba(161,98,7,0.15); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                     <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: var(--accent) !important;"></i>
                                 </div>
                                 <h2 class="luxury-text gold-text" style="font-size: 2.2rem; margin: 0;">Xabarlar</h2>
