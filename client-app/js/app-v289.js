@@ -533,24 +533,15 @@ async function renderOrdersHistory() {
 
 
 // 1. Age Gate Global Actions
-window.proceedToApp = function() {
+window.showSecurity = function() {
     localStorage.setItem('durlovely_age_verified_v2', 'true');
     ageGate.classList.add('hide');
-    
-    // Direct path to either Auth or Home
-    const authPhone = localStorage.getItem('durlovely_user_auth');
-    if (authPhone) {
-        mainApp.classList.remove('hide');
-        navigate('home');
-    } else {
-        showAuthScreen();
-    }
-    
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    securityScreen.classList.remove('hide');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 };
 
-window.showSecurity = function() {
-    window.proceedToApp(); // Alias for backward compatibility
+window.proceedToApp = function() {
+    window.showSecurity(); // Alias to ensure robustness
 };
 
 window.exitApp = function() {
@@ -622,7 +613,15 @@ if (pearl) {
 function successSecurity() {
     if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     securityScreen.classList.add('hide');
-    showAuthScreen();
+    
+    // Check auth status to decide next screen
+    const authPhone = localStorage.getItem('durlovely_user_auth');
+    if (authPhone) {
+        mainApp.classList.remove('hide');
+        navigate('home');
+    } else {
+        showAuthScreen();
+    }
 }
 
 // 2.5 Auth - Native Telegram Share Contact
