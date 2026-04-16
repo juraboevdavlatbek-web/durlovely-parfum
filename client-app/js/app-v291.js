@@ -1885,8 +1885,11 @@ let allCustomers = [];
 async function initApp() {
     showScreen('splash-screen');
 
-    // 0. LOCALHOST BYPASS (Immediate skip for testing)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // 0. DEVELOPER BYPASS (Skip for testing)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDebug = urlParams.get('debug') === 'true';
+
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || isDebug) {
         const testUser = '+998901234567';
         localStorage.setItem('durlovely_user_auth', testUser);
         localStorage.setItem('durlovely_age_verified_v2', 'true');
