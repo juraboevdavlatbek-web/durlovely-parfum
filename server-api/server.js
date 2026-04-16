@@ -1,4 +1,4 @@
-// Last Update: 2026-04-16 19:10 (Force Re-deploy Full Sync)
+// Last Update: 2026-04-16 19:15 (Force Re-deploy Full Sync)
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
@@ -195,15 +195,8 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify({ status: 'AESTHETICALLY_ACTIVE', time: new Date().toISOString() }));
             return;
         }
-
-        setJSON();
-        res.end(JSON.stringify({ 
-            status: 'AESTHETICALLY_ACTIVE', 
-            time: new Date().toISOString(),
-            cwd: process.cwd(),
-            dirname: __dirname
-        }));
-        return;
+        
+        // Handlers continue below...
     }
 
     // API: Image Upload
