@@ -13,7 +13,7 @@ const API_BASE = '/api';
 window.__LAST_DUR = "0.0";
 window.__LAST_USER = null;
 window.__NAV_MAP = ['home', 'catalog', 'likes', 'cart', 'gift', 'profile'];
-window.__CURRENT_PAGE = 'home';
+window.__CURRENT_PAGE = null;
 
 window.showAlert = function(msg) {
     if (tg && tg.showAlert) tg.showAlert(msg);
