@@ -375,7 +375,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.9.0
+                    Joriy versiya: v2.9.1
                 </div>
             </div>
         </div>
@@ -384,7 +384,10 @@ const pages = {
 
 window.navigate = async function(page) {
     const pageContent = document.getElementById('page-content');
-    if (!pageContent || window.__CURRENT_PAGE === page) return;
+    if (!pageContent) return;
+    
+    // Safety: if the page is empty, don't skip navigation
+    if (window.__CURRENT_PAGE === page && pageContent.innerHTML.trim() !== "") return;
 
     // 0. Directional Logic
     const oldIdx = window.__NAV_MAP.indexOf(window.__CURRENT_PAGE);
