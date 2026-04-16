@@ -418,6 +418,7 @@ window.navigate = async function(page) {
 
     // 3. Navigation Logic (Page Specific)
     if (page === 'home') {
+        if (!allProducts || allProducts.length === 0) await fetchProducts();
         renderHomeGrids(allProducts);
         renderSlider();
         updateDurBox();
