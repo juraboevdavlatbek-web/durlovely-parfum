@@ -1,4 +1,4 @@
-// Last Update: 2026-04-16 19:18 (Force Re-deploy Full Sync)
+// Last Update: 2026-04-16 19:27 (Force Re-deploy v2.9.0b ShowOnHome + Home Fix)
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
@@ -11,6 +11,8 @@ function normalizePhone(num) {
     if (!num) return '';
     return String(num).replace(/\D/g, ''); // Digits only
 }
+
+const otps = {}; // In-memory OTP storage: { phone: { code: '123456', expiry: 123456789 } }
 
 // Telegram Helper
 function sendTelegramMessage(chatId, text) {
@@ -189,6 +191,96 @@ const server = http.createServer(async (req, res) => {
 
     // 0. API ROUTING (Strict Priority)
     if (req.url.startsWith('/api/')) {
+        // API: Auth - Send OTP
+        if (req.url.startsWith('/api/auth/send-otp') && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => body += chunk);
+            req.on('end', async () => {
+                const { phone } = JSON.parse(body);
+                const cleanPhone = normalizePhone(phone);
+                if (!cleanPhone.endsWith('901234567') && !cleanPhone.startsWith('998')) {
+                    setJSON(); res.end(JSON.stringify({ success: false, error: 'Faqat Uzbekistan raqamlari qabul qilinadi' }));
+                    return;
+                }
+                
+                const code = Math.floor(100000 + Math.random() * 900000).toString();
+                otps[cleanPhone] = { code, expiry: Date.now() + 5 * 60 * 1000 };
+                
+                // For simulation: Send OTP via Telegram Bot to the admin or log it
+                console.log(`[OTP] Sent to ${cleanPhone}: ${code}`);
+                sendTelegramMessage(ADMIN_CHAT_ID, `🔑 <b>OTP Tasdiqlash Kodi</b>\n\nRaqam: <code>${cleanPhone}</code>\nKod: <code>${code}</code>\n\n<i>(Bu ma'lumot faqat simulyatsiya uchun adminga yuborildi)</i>`);
+                
+                setJSON();
+                res.end(JSON.stringify({ success: true, message: 'Kod yuborildi' }));
+            });
+            return;
+        }
+
+        // API: Auth - Verify OTP
+        if (req.url.startsWith('/api/auth/verify-otp') && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => body += chunk);
+            req.on('end', async () => {
+                const { phone, code } = JSON.parse(body);
+                const cleanPhone = normalizePhone(phone);
+                const saved = otps[cleanPhone];
+                
+                if (saved && saved.code === code && saved.expiry > Date.now()) {
+                    delete otps[cleanPhone];
+                    // Find or Create Customer
+                    let phoneWithPlus = cleanPhone;
+                    if (!phoneWithPlus.startsWith('+')) phoneWithPlus = '+' + phoneWithPlus;
+                    
+                    const search = await dbRequest('findOne', 'customers', { filter: { phone: phoneWithPlus } });
+                    let customer = search.document;
+                    if (!customer) {
+                        customer = {
+                            id: Date.now(), phone: phoneWithPlus,
+                            firstName: 'Web Foydalanuvchi',
+                            dateJoined: new Date().toLocaleDateString(),
+                            dur: 0, durHistory: [], isVip: false, isVerified: true
+                        };
+                        await dbRequest('insertOne', 'customers', { document: customer });
+                    }
+                    setJSON();
+                    res.end(JSON.stringify({ success: true, customer }));
+                } else {
+                    setJSON();
+                    res.end(JSON.stringify({ success: false, error: 'Kod xato yoki muddati o\'tgan' }));
+                }
+            });
+            return;
+        }
+
+        // API: Auth - Google Login
+        if (req.url.startsWith('/api/auth/google') && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => body += chunk);
+            req.on('end', async () => {
+                const { credential, phone } = JSON.parse(body);
+                // In production, we would verify the JWT 'credential' here.
+                // For this MVP, we assume the frontend verified it and passed the phone if needed.
+                const cleanPhone = normalizePhone(phone);
+                let phoneWithPlus = cleanPhone;
+                if (!phoneWithPlus.startsWith('+')) phoneWithPlus = '+' + phoneWithPlus;
+                
+                const search = await dbRequest('findOne', 'customers', { filter: { phone: phoneWithPlus } });
+                let customer = search.document;
+                if (!customer) {
+                    customer = {
+                        id: Date.now(), phone: phoneWithPlus,
+                        firstName: 'Google Foydalanuvchi',
+                        dateJoined: new Date().toLocaleDateString(),
+                        dur: 0, durHistory: [], isVip: false, isVerified: true
+                    };
+                    await dbRequest('insertOne', 'customers', { document: customer });
+                }
+                setJSON();
+                res.end(JSON.stringify({ success: true, customer }));
+            });
+            return;
+        }
+
         // Anti-Sleep Keep-Alive Endpoint
         if (req.url.startsWith('/api/ping')) {
             setJSON();

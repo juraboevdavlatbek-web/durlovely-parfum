@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/shared-assets/css/main-v2026.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         (function() {
             const savedTheme = localStorage.getItem('durlovely_theme') || 'dark';
@@ -74,11 +75,34 @@
             <p style="font-weight: 300; font-size: 0.9rem; color: #aaa; margin-bottom: 30px;">Telefon raqamingiz orqali tasdiqlang</p>
             
             <div id="phone-step" class="auth-card liquid-glass">
+                <!-- Content will be injected by app.js based on platform -->
+            </div>
+
+            <div id="otp-step" class="auth-card liquid-glass hide">
+                <p style="font-size: 0.8rem; color: #888; margin-bottom: 15px;">Kodni kiriting</p>
                 <div class="input-group">
-                    <span class="prefix">+998</span>
-                    <input type="tel" id="phone-input" placeholder="90 123 45 67" maxlength="12">
+                    <input type="text" id="otp-input" placeholder="000000" maxlength="6" style="text-align: center; letter-spacing: 1em; font-weight: 700;">
                 </div>
-                <button class="btn-primary" style="width: 100%; margin-top: 20px;" onclick="verifyPhone()">TASDIQLASH</button>
+                <button class="btn-primary" style="width: 100%; margin-top: 20px;" onclick="verifyOTP()">TASDIQLASH</button>
+                <div id="otp-timer" style="margin-top: 15px; font-size: 0.75rem; color: #666;"></div>
+            </div>
+
+            <div id="google-auth-box" style="margin-top: 20px;" class="hide">
+                 <div id="g_id_onload"
+                     data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleLogin"
+                     data-auto_prompt="false">
+                  </div>
+                  <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                  </div>
             </div>
         </div>
     </section>
@@ -333,6 +357,6 @@
         </div>
     </div>
 
-    <script src="js/app-v289.js?v=2.8.9"></script>
+    <script src="js/app-v289.js?v=2.9.0"></script>
 </body>
 </html>

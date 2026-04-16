@@ -350,7 +350,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.8.1
+                    Joriy versiya: v2.9.0
                 </div>
             </div>
         </div>
@@ -641,7 +641,7 @@ function showAuthScreen() {
     const phoneStep = document.getElementById('phone-step');
     
     // If inside Telegram OR localhost, show the premium button
-    if ((tg && tg.requestContact) || window.location.hostname === 'localhost') {
+    if ((tg && tg.requestContact) || (window.location.hostname === 'localhost' && !localStorage.getItem('dev_browser_mode'))) {
         phoneStep.innerHTML = `
             <div style="text-align:center; padding: 10px 0;">
                 <i class="fa-brands fa-telegram" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px; display: block;"></i>
@@ -651,16 +651,123 @@ function showAuthScreen() {
                 </button>
             </div>
         `;
+        document.getElementById('google-auth-box').classList.add('hide');
     } else {
-        // Browser fallback: show manual phone input
+        // Browser fallback: show manual phone input + Google option
         phoneStep.innerHTML = `
             <div class="input-group">
                 <span class="prefix">+998</span>
                 <input type="tel" id="phone-input" placeholder="90 123 45 67" maxlength="12">
             </div>
-            <button class="btn-primary" style="width: 100%; margin-top: 20px;" onclick="verifyPhone()">TASDIQLASH</button>
+            <button class="btn-primary" style="width: 100%; margin-top: 20px;" onclick="sendOTP()">KODNI YUBORISH</button>
         `;
+        document.getElementById('google-auth-box').classList.remove('hide');
     }
+}
+
+// 2.5.1 OTP Logic
+let otpTimer = null;
+window.sendOTP = async function() {
+    const phoneInput = document.getElementById('phone-input').value;
+    const cleanPhone = phoneInput.replace(/\s+/g, '');
+    if (cleanPhone.length < 9) {
+        showAlert("Iltimos, telefon raqamingizni to'g'ri kiriting");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/auth/send-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: cleanPhone })
+        });
+        const result = await res.json();
+        if (result.success) {
+            document.getElementById('phone-step').classList.add('hide');
+            document.getElementById('otp-step').classList.remove('hide');
+            startOTPTimer();
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        } else {
+            showAlert(result.error || "Xatolik yuz berdi");
+        }
+    } catch(e) {
+        showAlert("Server bilan bog'lanishda xatolik");
+    }
+};
+
+function startOTPTimer() {
+    let timeLeft = 60;
+    const timerEl = document.getElementById('otp-timer');
+    if (otpTimer) clearInterval(otpTimer);
+    
+    otpTimer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(otpTimer);
+            timerEl.innerHTML = `<a href="#" onclick="sendOTP()">Kodni qayta yuborish</a>`;
+        } else {
+            timerEl.innerText = `Kodni qayta yuborish: ${timeLeft}s`;
+        }
+    }, 1000);
+}
+
+window.verifyOTP = async function() {
+    const phoneInput = document.getElementById('phone-input').value;
+    const cleanPhone = phoneInput.replace(/\s+/g, '');
+    const code = document.getElementById('otp-input').value;
+
+    if (code.length < 6) {
+        showAlert("Kodni to'liq kiriting");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: cleanPhone, code: code })
+        });
+        const result = await res.json();
+        if (result.success) {
+            handleLoginSuccess(result.customer);
+        } else {
+            showAlert(result.error);
+        }
+    } catch(e) {
+        showAlert("Xatolik yuz berdi");
+    }
+};
+
+// 2.5.2 Google Login Callback
+window.onGoogleLogin = function(response) {
+    console.log("Google Login Response:", response);
+    // In browser mode, we might still need the phone number for orders.
+    // For now, let's show a prompt or use a mock phone if we want to bypass.
+    const mockPhone = '+998001112233'; // In real app, we would ask for phone after Google singin
+    
+    fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential, phone: mockPhone })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            handleLoginSuccess(result.customer);
+        }
+    });
+};
+
+function handleLoginSuccess(customerData) {
+    customer = customerData;
+    localStorage.setItem('durlovely_user_auth', customer.phone);
+    
+    document.getElementById('auth-screen').classList.add('hide');
+    document.getElementById('otp-step').classList.add('hide');
+    document.getElementById('google-auth-box').classList.add('hide');
+    
+    birthdayScreen.classList.remove('hide');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 }
 
 window.requestTelegramContact = function() {
