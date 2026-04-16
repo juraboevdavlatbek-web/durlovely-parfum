@@ -533,11 +533,24 @@ async function renderOrdersHistory() {
 
 
 // 1. Age Gate Global Actions
-window.showSecurity = function() {
+window.proceedToApp = function() {
     localStorage.setItem('durlovely_age_verified_v2', 'true');
     ageGate.classList.add('hide');
-    securityScreen.classList.remove('hide');
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    
+    // Direct path to either Auth or Home
+    const authPhone = localStorage.getItem('durlovely_user_auth');
+    if (authPhone) {
+        mainApp.classList.remove('hide');
+        navigate('home');
+    } else {
+        showAuthScreen();
+    }
+    
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+};
+
+window.showSecurity = function() {
+    window.proceedToApp(); // Alias for backward compatibility
 };
 
 window.exitApp = function() {
@@ -1802,17 +1815,21 @@ async function initApp() {
         }
     }
 
-    // 2. Start fetching products (non-blocking to prevent UI freeze)
+    // 2. Start fetching products (non-blocking)
     fetchProducts();
     
-    // 3. Auto-login or proceed to onboarding
+    // 3. Routing Logic (Direct Skip if possible)
+    const isVerified = localStorage.getItem('durlovely_age_verified_v2');
     const authPhone = localStorage.getItem('durlovely_user_auth');
-    if (authPhone) {
+
+    if (!isVerified) {
+        showScreen('age-gate');
+    } else if (!authPhone) {
+        showAuthScreen();
+    } else {
         hideAllOnboarding();
         mainApp.classList.remove('hide');
         navigate('home');
-    } else {
-        showScreen('age-gate');
     }
 }
 

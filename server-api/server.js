@@ -1,4 +1,4 @@
-// Last Update: 2026-04-16 19:02 (Force Re-deploy Full Sync)
+// Last Update: 2026-04-16 19:10 (Force Re-deploy Full Sync)
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
@@ -187,8 +187,15 @@ const server = http.createServer(async (req, res) => {
 
     const setJSON = () => res.setHeader('Content-Type', 'application/json');
 
-    // Anti-Sleep Keep-Alive Endpoint
-    if (req.url.startsWith('/api/ping') && req.method === 'GET') {
+    // 0. API ROUTING (Strict Priority)
+    if (req.url.startsWith('/api/')) {
+        // Anti-Sleep Keep-Alive Endpoint
+        if (req.url.startsWith('/api/ping')) {
+            setJSON();
+            res.end(JSON.stringify({ status: 'AESTHETICALLY_ACTIVE', time: new Date().toISOString() }));
+            return;
+        }
+
         setJSON();
         res.end(JSON.stringify({ 
             status: 'AESTHETICALLY_ACTIVE', 
@@ -761,7 +768,7 @@ const server = http.createServer(async (req, res) => {
     // Static Files Handling: Prevent API routes from falling through to static server
     if (req.url.startsWith('/api/')) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'API route not found' }));
+        res.end(JSON.stringify({ error: `API route not found: ${req.url}` }));
         return;
     }
 
