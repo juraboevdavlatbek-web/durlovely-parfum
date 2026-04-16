@@ -24,6 +24,31 @@ window.showAlert = function(msg) {
 const ageGate = document.getElementById('age-gate');
 const securityScreen = document.getElementById('security');
 const mainApp = document.getElementById('app-main');
+
+// Firebase Configuration (User must provide actual values)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
+if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    auth.languageCode = 'uz'; // Set to Uzbek
+    
+    // Invisible reCAPTCHA for Phone Auth
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+      'size': 'invisible',
+      'callback': (response) => {
+        // reCAPTCHA solved, allow signInWithPhoneNumber.
+      }
+    });
+}
 const pearl = document.getElementById('dur-pearl');
 const target = document.getElementById('slider-target');
 const authScreen = document.getElementById('auth-screen');
@@ -665,109 +690,97 @@ function showAuthScreen() {
     }
 }
 
-// 2.5.1 OTP Logic
-let otpTimer = null;
+// 2.5.1 Firebase OTP Logic
+let confirmationResult = null;
+
 window.sendOTP = async function() {
     const phoneInput = document.getElementById('phone-input').value;
-    const cleanPhone = phoneInput.replace(/\s+/g, '');
-    if (cleanPhone.length < 9) {
-        showAlert("Iltimos, telefon raqamingizni to'g'ri kiriting");
+    let cleanPhone = phoneInput.replace(/\s+/g, '');
+    if (!cleanPhone.startsWith('+')) cleanPhone = '+998' + cleanPhone;
+    
+    if (cleanPhone.length < 13) {
+        showAlert("Iltimos, telefon raqamingizni to'liq kiriting");
         return;
     }
 
     try {
-        const res = await fetch(`${API_BASE}/auth/send-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: cleanPhone })
-        });
-        const result = await res.json();
-        if (result.success) {
-            document.getElementById('phone-step').classList.add('hide');
-            document.getElementById('otp-step').classList.remove('hide');
-            startOTPTimer();
-            if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-        } else {
-            showAlert(result.error || "Xatolik yuz berdi");
-        }
-    } catch(e) {
-        showAlert("Server bilan bog'lanishda xatolik");
+        const appVerifier = window.recaptchaVerifier;
+        confirmationResult = await firebase.auth().signInWithPhoneNumber(cleanPhone, appVerifier);
+        
+        document.getElementById('phone-step').classList.add('hide');
+        document.getElementById('otp-step').classList.remove('hide');
+        
+        showAlert("SMS kod yuborildi ✅");
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    } catch(error) {
+        console.error("SMS Error:", error);
+        showAlert("Xatolik: SMS yuborib bo'lmadi (" + error.message + ")");
     }
 };
-
-function startOTPTimer() {
-    let timeLeft = 60;
-    const timerEl = document.getElementById('otp-timer');
-    if (otpTimer) clearInterval(otpTimer);
-    
-    otpTimer = setInterval(() => {
-        timeLeft--;
-        if (timeLeft <= 0) {
-            clearInterval(otpTimer);
-            timerEl.innerHTML = `<a href="#" onclick="sendOTP()">Kodni qayta yuborish</a>`;
-        } else {
-            timerEl.innerText = `Kodni qayta yuborish: ${timeLeft}s`;
-        }
-    }, 1000);
-}
 
 window.verifyOTP = async function() {
-    const phoneInput = document.getElementById('phone-input').value;
-    const cleanPhone = phoneInput.replace(/\s+/g, '');
     const code = document.getElementById('otp-input').value;
-
     if (code.length < 6) {
-        showAlert("Kodni to'liq kiriting");
+        showAlert("Kodni kiriting");
         return;
     }
 
     try {
-        const res = await fetch(`${API_BASE}/auth/verify-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: cleanPhone, code: code })
-        });
-        const result = await res.json();
-        if (result.success) {
-            handleLoginSuccess(result.customer);
-        } else {
-            showAlert(result.error);
-        }
-    } catch(e) {
-        showAlert("Xatolik yuz berdi");
+        const result = await confirmationResult.confirm(code);
+        const user = result.user;
+        
+        // Sync with backend
+        handleFirebaseLogin(user);
+    } catch(error) {
+        showAlert("Kod noto'g'ri kiritildi ❌");
     }
 };
 
-// 2.5.2 Google Login Callback
-window.onGoogleLogin = function(response) {
-    console.log("Google Login Response:", response);
-    // In browser mode, we might still need the phone number for orders.
-    // For now, let's show a prompt or use a mock phone if we want to bypass.
-    const mockPhone = '+998001112233'; // In real app, we would ask for phone after Google singin
+// 2.5.2 Firebase Google Login
+window.signInWithGoogle = async function() {
+    try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        handleFirebaseLogin(result.user);
+    } catch(error) {
+        showAlert("Google orqali kirishda xatolik yuz berdi");
+    }
+};
+
+async function handleFirebaseLogin(user) {
+    const phone = user.phoneNumber || '';
+    const name = user.displayName || 'Mehmon';
+    const email = user.email || '';
     
-    fetch(`${API_BASE}/auth/google`, {
+    // Token for backend verification
+    const idToken = await user.getIdToken();
+    
+    fetch(`${API_BASE}/auth/firebase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential, phone: mockPhone })
+        body: JSON.stringify({ 
+            token: idToken, 
+            phone: phone, 
+            name: name,
+            email: email
+        })
     })
     .then(res => res.json())
     .then(result => {
         if (result.success) {
-            handleLoginSuccess(result.customer);
+            customer = result.customer;
+            localStorage.setItem('durlovely_user_auth', customer.phone);
+            
+            document.getElementById('auth-screen').classList.add('hide');
+            document.getElementById('otp-step').classList.add('hide');
+            document.getElementById('google-auth-box').classList.add('hide');
+            
+            birthdayScreen.classList.remove('hide');
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        } else {
+            showAlert(result.error || "Tizimga kirishda xatolik");
         }
     });
-};
-
-function handleLoginSuccess(customerData) {
-    customer = customerData;
-    localStorage.setItem('durlovely_user_auth', customer.phone);
-    
-    document.getElementById('auth-screen').classList.add('hide');
-    document.getElementById('otp-step').classList.add('hide');
-    document.getElementById('google-auth-box').classList.add('hide');
-    
-    birthdayScreen.classList.remove('hide');
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 }
 
 window.requestTelegramContact = function() {

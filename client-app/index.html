@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="/shared-assets/css/main-v2026.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script>
         (function() {
             const savedTheme = localStorage.getItem('durlovely_theme') || 'dark';
@@ -88,22 +90,14 @@
             </div>
 
             <div id="google-auth-box" style="margin-top: 20px;" class="hide">
-                 <div id="g_id_onload"
-                     data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-                     data-context="signin"
-                     data-ux_mode="popup"
-                     data-callback="onGoogleLogin"
-                     data-auto_prompt="false">
-                  </div>
-                  <div class="g_id_signin"
-                     data-type="standard"
-                     data-shape="rectangular"
-                     data-theme="outline"
-                     data-text="signin_with"
-                     data-size="large"
-                     data-logo_alignment="left">
-                  </div>
+                 <button class="btn-primary" style="width: 100%; background: #fff; color: #444; border: 1px solid #ddd;" onclick="signInWithGoogle()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px; height:18px; margin-right:10px; vertical-align:middle;">
+                    Google bilan kirish
+                 </button>
             </div>
+            
+            <!-- Hidden reCAPTCHA container for Phone Auth -->
+            <div id="recaptcha-container" style="margin-top: 15px;"></div>
         </div>
     </section>
 
