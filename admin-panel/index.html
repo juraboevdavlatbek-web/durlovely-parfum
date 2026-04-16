@@ -369,6 +369,12 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #eee; font-size: 13px;">
+                        <input type="checkbox" id="p-show-home" checked style="accent-color: var(--accent); width: 18px; height: 18px;">
+                        Bosh sahifada ko'rsatish (Home)
+                    </label>
+                </div>
+                <div class="form-group">
                     <label>Mahsulot rasm URL</label>
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="p-image-url" placeholder="https://..." style="flex: 1;">
@@ -884,6 +890,8 @@
                 document.getElementById('p-image-url').value = p.image || '';
                 const layoutSelect = document.getElementById('p-layout');
                 if (layoutSelect) layoutSelect.value = p.layout || 'grid';
+                const showHomeCheck = document.getElementById('p-show-home');
+                if (showHomeCheck) showHomeCheck.checked = p.showOnHome !== false;
             } else {
                 document.getElementById('modal-title').innerText = "Yangi Mahsulot";
                 document.getElementById('product-form').reset();
@@ -1201,7 +1209,8 @@
                 category: document.getElementById('p-category').value,
                 stock: parseInt(document.getElementById('p-stock').value),
                 image: document.getElementById('p-image-url').value,
-                layout: document.getElementById('p-layout').value
+                layout: document.getElementById('p-layout').value,
+                showOnHome: document.getElementById('p-show-home').checked
             };
 
             const url = id ? `${API_BASE}/products/${id}` : `${API_BASE}/products`;

@@ -79,13 +79,24 @@ const pages = {
                 </div>
             </div>
 
+            <!-- Horizontal Scroll Section -->
+            <div id="home-scroll-section" style="display: none; padding: 0 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span class="luxury-text gold-text" style="font-size: 1.1rem;">Maxsus takliflar</span>
+                    <span onclick="navigate('catalog')" style="font-size: 11px; color: #666; font-weight: 700; cursor: pointer;">HAMMASI <i class="fa-solid fa-chevron-right" style="font-size: 8px;"></i></span>
+                </div>
+                <div id="home-product-scroll" class="horizontal-scroll-container">
+                    <!-- Dynamic scroll items -->
+                </div>
+            </div>
+
             <!-- Best Sellers Grid -->
             <div style="padding: 0 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h3 class="luxury-text" style="font-size: 1.8rem; letter-spacing: -0.01em;">Xit Mahsulotlar</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 class="luxury-text" style="font-size: 1.4rem; letter-spacing: -0.01em;">Xit Mahsulotlar</h3>
                     <a href="#" onclick="navigate('catalog')" style="color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none;">Hammasi <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
                 </div>
-                <div class="product-grid" id="home-product-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="product-grid" id="home-product-grid">
                     <!-- Filled by init code -->
                 </div>
             </div>
@@ -889,8 +900,11 @@ function renderHomeGrids(productsToRender) {
     const scrollSection = document.getElementById('home-scroll-section');
 
     if (homeGrid) {
+        // Filter: only show products with showOnHome !== false (backward compatible)
+        const homeProducts = productsToRender.filter(p => p.showOnHome !== false);
+
         // 1. Render Scroll Section (Limited to 8)
-        const scrollProducts = productsToRender.filter(p => p.layout === 'scroll').reverse().slice(0, 8);
+        const scrollProducts = homeProducts.filter(p => p.layout === 'scroll').reverse().slice(0, 8);
         if (scrollProducts.length > 0) {
             if (scrollSection) scrollSection.style.display = 'block';
             if (homeScroll) {
@@ -904,8 +918,8 @@ function renderHomeGrids(productsToRender) {
             if (scrollSection) scrollSection.style.display = 'none';
         }
 
-        // 2. Render Vertical Grid (Layout: grid or default) - Limit to 10 products
-        const gridProducts = productsToRender.filter(p => !p.layout || p.layout === 'grid').reverse().slice(0, 10);
+        // 2. Render Vertical Grid - Limit to 100 products
+        const gridProducts = homeProducts.filter(p => !p.layout || p.layout === 'grid').reverse().slice(0, 100);
         homeGrid.innerHTML = gridProducts.map(p => renderProductCard(p)).join('');
         
         if (gridProducts.length === 0 && scrollProducts.length === 0) {
