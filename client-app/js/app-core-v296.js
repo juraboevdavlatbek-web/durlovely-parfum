@@ -375,7 +375,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.9.5
+                    Joriy versiya: v2.9.6
                 </div>
             </div>
         </div>
@@ -421,11 +421,19 @@ window.navigate = async function(page) {
 
     // 3. Navigation Logic (Page Specific)
     if (page === 'home') {
-        if (!allProducts || allProducts.length === 0) await fetchProducts();
-        renderHomeGrids(allProducts);
-        renderSlider();
-        updateDurBox();
-        setTimeout(updateDurBox, 100);
+        if (!allProducts || allProducts.length === 0) {
+            const homeGrid = document.getElementById('home-product-grid');
+            if (homeGrid) homeGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 50px 0; text-align: center;"><div class="premium-loader"></div></div>';
+            await fetchProducts();
+        }
+        try {
+            renderHomeGrids(allProducts);
+            renderSlider();
+            updateDurBox();
+            setTimeout(updateDurBox, 100);
+        } catch (e) {
+            console.error("Home render error:", e);
+        }
     }
     if (page === 'catalog') searchProducts('');
     if (page === 'likes') renderLikes();
@@ -1019,6 +1027,11 @@ window.filterByCategory = function(category, btn) {
 };
 
 function renderHomeGrids(productsToRender) {
+    if (!productsToRender || !Array.isArray(productsToRender)) {
+        console.error("Invalid productsToRender:", productsToRender);
+        return;
+    }
+
     const homeGrid = document.getElementById('home-product-grid');
     const homeScroll = document.getElementById('home-product-scroll');
     const scrollSection = document.getElementById('home-scroll-section');
