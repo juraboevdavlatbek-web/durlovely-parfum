@@ -1,4 +1,4 @@
-// Last Update: 2026-04-16 09:30 (Force Re-deploy v2.9.0b ShowOnHome + Home Fix)
+// Last Update: 2026-04-16 18:49 (Force Re-deploy v2.9.0b ShowOnHome + Home Fix)
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
@@ -854,7 +854,12 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(404);
             res.end('Not Found');
         } else {
-            res.writeHead(200, { 'Content-Type': contentType });
+            res.writeHead(200, { 
+                'Content-Type': contentType,
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            });
             res.end(content, 'utf-8');
         }
     });
