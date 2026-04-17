@@ -386,7 +386,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.9.8
+                    Joriy versiya: v2.9.9
                 </div>
             </div>
         </div>
