@@ -172,13 +172,15 @@
   "products": [
     {
       "id": 1,
-      "name": "Amber Gold",
-      "price": 450000,
-      "vip_price": 380000,
-      "stock": 15,
-      "category": "Gold Collection",
+      "name": "Durlovely Signature",
+      "price": 520000,
+      "vip_price": 440000,
+      "stock": 8,
+      "category": "Signature",
       "description": "Luxurious amber scents with a touch of gold.",
-      "image": "/shared-assets/assets/images/amber-gold.png"
+      "image": "/shared-assets/assets/images/signature.png",
+      "layout": "scroll",
+      "showOnHome": true
     },
     {
       "id": 2,

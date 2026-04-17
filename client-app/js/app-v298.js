@@ -5,8 +5,12 @@ if (tg) {
     tg.expand();
     tg.ready();
     tg.enableClosingConfirmation();
-    if (tg.setHeaderColor) tg.setHeaderColor('#0c0a09');
-    if (tg.setBackgroundColor) tg.setBackgroundColor('#0c0a09');
+    
+    // Sync TG background with actual theme state from the start
+    const savedTheme = localStorage.getItem('durlovely_theme') || 'dark';
+    const initialBg = savedTheme === 'dark' ? '#0c0a09' : '#fafaf9';
+    if (tg.setHeaderColor) tg.setHeaderColor(initialBg);
+    if (tg.setBackgroundColor) tg.setBackgroundColor(initialBg);
 }
 
 const API_BASE = '/api';
@@ -104,8 +108,19 @@ const pages = {
                 </div>
             </div>
 
+            <!-- Best Sellers Grid (Top) -->
+            <div style="padding: 0 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 class="luxury-text" style="font-size: 1.4rem; letter-spacing: -0.01em;">Xit Mahsulotlar</h3>
+                    <a href="#" onclick="navigate('catalog')" style="color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none;">Hammasi <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
+                </div>
+                <div class="product-grid" id="home-product-grid-top">
+                    <!-- Filled by init code -->
+                </div>
+            </div>
+
             <!-- Horizontal Scroll Section -->
-            <div id="home-scroll-section" style="display: none; padding: 0 15px; margin-bottom: 20px;">
+            <div id="home-scroll-section" style="display: none; padding: 20px 15px 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <span class="luxury-text gold-text" style="font-size: 1.1rem;">Maxsus takliflar</span>
                     <span onclick="navigate('catalog')" style="font-size: 11px; color: #666; font-weight: 700; cursor: pointer;">HAMMASI <i class="fa-solid fa-chevron-right" style="font-size: 8px;"></i></span>
@@ -115,13 +130,9 @@ const pages = {
                 </div>
             </div>
 
-            <!-- Best Sellers Grid -->
-            <div style="padding: 0 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 class="luxury-text" style="font-size: 1.4rem; letter-spacing: -0.01em;">Xit Mahsulotlar</h3>
-                    <a href="#" onclick="navigate('catalog')" style="color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none;">Hammasi <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
-                </div>
-                <div class="product-grid" id="home-product-grid">
+            <!-- Best Sellers Grid (Bottom) -->
+            <div style="padding: 20px 20px 0;">
+                <div class="product-grid" id="home-product-grid-bottom">
                     <!-- Filled by init code -->
                 </div>
             </div>
@@ -375,7 +386,7 @@ const pages = {
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 10px;"></i> HISOBDAN CHIQISH
                 </button>
                 <div style="margin-top: 30px; text-align: center; color: #333; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">
-                    Joriy versiya: v2.9.7
+                    Joriy versiya: v2.9.8
                 </div>
             </div>
         </div>
@@ -422,8 +433,8 @@ window.navigate = async function(page) {
     // 3. Navigation Logic (Page Specific)
     if (page === 'home') {
         if (!allProducts || allProducts.length === 0) {
-            const homeGrid = document.getElementById('home-product-grid');
-            if (homeGrid) homeGrid.innerHTML = '<div style="grid-column: 1/-1; padding: 50px 0; text-align: center;"><div class="premium-loader"></div></div>';
+            const homeGridTop = document.getElementById('home-product-grid-top');
+            if (homeGridTop) homeGridTop.innerHTML = '<div style="grid-column: 1/-1; padding: 50px 0; text-align: center;"><div class="premium-loader"></div></div>';
             await fetchProducts();
         }
         try {
@@ -957,9 +968,11 @@ window.toggleLike = function(id) {
         } else if (pageName.includes('likes') || pageName.includes('sevimli')) {
             renderLikes();
         } else {
-            // Re-render home product grid
-            const homeGrid = document.getElementById('home-product-grid');
-            if (homeGrid) homeGrid.innerHTML = allProducts.slice(0, 4).map(p => renderProductCard(p)).join('');
+            // Re-render home product grids slightly differently on like toggle
+            const pgridTop = document.getElementById('home-product-grid-top');
+            if (pgridTop) {
+                 renderHomeGrids(allProducts);
+            }
         }
     }
     
@@ -1032,16 +1045,24 @@ function renderHomeGrids(productsToRender) {
         return;
     }
 
-    const homeGrid = document.getElementById('home-product-grid');
+    const homeGridTop = document.getElementById('home-product-grid-top');
+    const homeGridBottom = document.getElementById('home-product-grid-bottom');
     const homeScroll = document.getElementById('home-product-scroll');
     const scrollSection = document.getElementById('home-scroll-section');
 
-    if (homeGrid) {
+    if (homeGridTop) {
         // Filter: only show products with showOnHome !== false (backward compatible)
         const homeProducts = productsToRender.filter(p => p.showOnHome !== false);
 
-        // 1. Render Scroll Section (Limited to 8)
-        const scrollProducts = homeProducts.filter(p => p.layout === 'scroll').reverse().slice(0, 8);
+        // Grid products (all up to 100 max)
+        const gridProducts = homeProducts.filter(p => !p.layout || p.layout === 'grid').reverse().slice(0, 100);
+        
+        // Render Top Vertical Grid - first 6 items
+        const topGridProducts = gridProducts.slice(0, 6);
+        homeGridTop.innerHTML = topGridProducts.map(p => renderProductCard(p)).join('');
+
+        // Render Horizontal Scroll Section - Limited to 10 items
+        const scrollProducts = homeProducts.filter(p => p.layout === 'scroll').reverse().slice(0, 10);
         if (scrollProducts.length > 0) {
             if (scrollSection) scrollSection.style.display = 'block';
             if (homeScroll) {
@@ -1055,12 +1076,14 @@ function renderHomeGrids(productsToRender) {
             if (scrollSection) scrollSection.style.display = 'none';
         }
 
-        // 2. Render Vertical Grid - Limit to 100 products
-        const gridProducts = homeProducts.filter(p => !p.layout || p.layout === 'grid').reverse().slice(0, 100);
-        homeGrid.innerHTML = gridProducts.map(p => renderProductCard(p)).join('');
+        // Render Bottom Vertical Grid - remaining items
+        const bottomGridProducts = gridProducts.slice(6);
+        if (homeGridBottom) {
+            homeGridBottom.innerHTML = bottomGridProducts.map(p => renderProductCard(p)).join('');
+        }
         
         if (gridProducts.length === 0 && scrollProducts.length === 0) {
-            homeGrid.innerHTML = `
+            homeGridTop.innerHTML = `
                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px 0; color: #444;">
                     <i class="fa-solid fa-box-open" style="font-size: 40px; margin-bottom: 15px; opacity: 0.3;"></i>
                     <p style="font-size: 14px;">Ushbu bo'limda mahsulotlar topilmadi.</p>
