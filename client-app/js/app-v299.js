@@ -19,6 +19,17 @@ window.__LAST_USER = null;
 window.__NAV_MAP = ['home', 'catalog', 'likes', 'cart', 'gift', 'profile'];
 window.__CURRENT_PAGE = null;
 window.__PREV_PAGE = 'home';
+window.__IS_LISTENING = false;
+
+// 0. AI Voice Assistant Controller
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'uz-UZ'; // Default to Uzbek
+}
 
 window.goBack = function(fallback = 'home') {
     if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
@@ -157,7 +168,7 @@ const pages = {
                 <div class="input-group liquid-glass" style="border-radius: 15px; margin-bottom: 20px;">
                     <i class="fa-solid fa-magnifying-glass" style="color: var(--accent); margin-right: 12px;"></i>
                     <input type="text" id="catalog-search" placeholder="Iforni tabiiy tilda qidiring..." oninput="searchProducts(this.value)" style="font-size: 14px;">
-                    <i class="fa-solid fa-microphone" style="color: var(--accent); margin-left:10px; opacity: 0.5;"></i>
+                    <i id="mic-btn" class="fa-solid fa-microphone" onclick="toggleVoiceSearch()" style="color: var(--accent); margin-left:10px; cursor: pointer; transition: all 0.3s;"></i>
                 </div>
 
                 <!-- Dynamic Categories -->
@@ -1345,15 +1356,31 @@ window.searchProducts = function(query, btn = null) {
         btn.classList.add('active');
     }
 
-    const filtered = allProducts.filter(p => {
-        const cat = String(p.category || '').toLowerCase();
+    const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2);
+    const searchRaw = query.toLowerCase();
+
+    const filtered = allProducts.map(p => {
+        let score = 0;
         const name = String(p.name || '').toLowerCase();
-        const gender = String(p.gender || 'Uniseks').toLowerCase(); // Default to Uniseks for old products
-        const search = query.toLowerCase();
-        const searchNorm = search.replace('lar', ''); // Support "ayollar" -> "ayol" fuzzy match
-        
-        return name.includes(search) || cat.includes(search) || gender.includes(searchNorm);
-    });
+        const cat = String(p.category || '').toLowerCase();
+        const desc = String(p.description || '').toLowerCase();
+        const gender = String(p.gender || 'Uniseks').toLowerCase();
+
+        // Exact match boost
+        if (name.includes(searchRaw)) score += 100;
+        if (cat.includes(searchRaw)) score += 50;
+
+        // Keyword matches
+        keywords.forEach(kw => {
+            if (name.includes(kw)) score += 20;
+            if (cat.includes(kw)) score += 15;
+            if (desc.includes(kw)) score += 10;
+            if (gender.includes(kw)) score += 30;
+        });
+
+        return { ...p, score };
+    }).filter(p => query === '' || p.score > 0)
+      .sort((a, b) => b.score - a.score);
 
     if (filtered.length === 0) {
         resultsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888; font-size: 14px;">Ushbu bo'limda mahsulotlar topilmadi.</div>`;
@@ -2171,3 +2198,88 @@ window.toggleTheme = function() {
 };
 
 initApp();
+// --- AI Voice Search Implementation ---
+window.toggleVoiceSearch = function() {
+    if (!recognition) {
+        showAlert("Kechirasiz, brauzeringiz ovozli qidiruvni qo'llab-quvvatlamaydi.");
+        return;
+    }
+
+    if (window.__IS_LISTENING) {
+        stopVoiceSearch();
+    } else {
+        startVoiceSearch();
+    }
+};
+
+function startVoiceSearch() {
+    window.__IS_LISTENING = true;
+    const overlay = document.getElementById('voice-overlay');
+    const preview = document.getElementById('voice-preview');
+    
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    
+    overlay.classList.add('active');
+    preview.innerText = "Eshityapman...";
+    
+    try {
+        recognition.start();
+    } catch (e) { console.error(e); }
+
+    recognition.onresult = (event) => {
+        const result = event.results[event.results.length - 1][0].transcript;
+        preview.innerText = result;
+        
+        const input = document.getElementById('catalog-search');
+        if (input) {
+            input.value = result;
+            searchProducts(result);
+        }
+    };
+
+    recognition.onend = () => {
+        if (window.__IS_LISTENING) {
+            setTimeout(() => stopVoiceSearch(), 1000);
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Speech Recognition Error:", event.error);
+        stopVoiceSearch();
+    };
+}
+
+function stopVoiceSearch() {
+    window.__IS_LISTENING = false;
+    const overlay = document.getElementById('voice-overlay');
+    overlay.classList.remove('active');
+    
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    
+    try {
+        recognition.stop();
+    } catch (e) {}
+}
+
+// Inject Voice UI Overlay
+(function injectVoiceUI() {
+    const overlay = document.createElement('div');
+    overlay.id = 'voice-overlay';
+    overlay.className = 'voice-assistant-overlay';
+    overlay.innerHTML = `
+        <div class="voice-wave-container">
+            <div class="voice-wave-bar"></div>
+            <div class="voice-wave-bar"></div>
+            <div class="voice-wave-bar"></div>
+            <div class="voice-wave-bar"></div>
+            <div class="voice-wave-bar"></div>
+            <div class="voice-wave-bar"></div>
+        </div>
+        <div id="voice-preview" class="voice-text-preview">Eshityapman...</div>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 50px;">Ifor nomi, jinsi yoki xarakterini ayting</p>
+        <button class="close-voice-btn" onclick="stopVoiceSearch()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    `;
+    document.body.appendChild(overlay);
+})();
