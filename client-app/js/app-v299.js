@@ -18,6 +18,16 @@ window.__LAST_DUR = "0.0";
 window.__LAST_USER = null;
 window.__NAV_MAP = ['home', 'catalog', 'likes', 'cart', 'gift', 'profile'];
 window.__CURRENT_PAGE = null;
+window.__PREV_PAGE = 'home';
+
+window.goBack = function(fallback = 'home') {
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    if (window.__PREV_PAGE && window.__NAV_MAP.includes(window.__PREV_PAGE)) {
+        navigate(window.__PREV_PAGE);
+    } else {
+        navigate(fallback);
+    }
+};
 
 window.showAlert = function(msg) {
     if (tg && tg.showAlert) tg.showAlert(msg);
@@ -150,12 +160,18 @@ const pages = {
                     <i class="fa-solid fa-microphone" style="color: var(--accent); margin-left:10px; opacity: 0.5;"></i>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none;">
-                    <style>div::-webkit-scrollbar { display: none; }</style>
-                    <button class="category-btn active" style="flex: 1;" onclick="searchProducts('', this)">Barchasi</button>
-                    <button class="category-btn" style="flex: 1;" onclick="searchProducts('erkaklar', this)">Erkaklar</button>
-                    <button class="category-btn" style="flex: 1;" onclick="searchProducts('ayollar', this)">Ayollar</button>
-                    <button class="category-btn" style="flex: 1;" onclick="searchProducts('uniseks', this)">Uniseks</button>
+                <!-- Dynamic Categories -->
+                <div id="catalog-categories" style="display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; scrollbar-width: none;">
+                    <button class="category-btn active" onclick="searchProducts('', this)">Barchasi</button>
+                    <!-- Filled dynamically -->
+                </div>
+
+                <!-- Gender Specific Filters -->
+                <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; scrollbar-width: none; opacity: 0.9;">
+                    <button class="gender-btn active" style="font-size: 11px; padding: 6px 15px; border-radius: 20px; border: 1px solid var(--border); background: var(--muted); color: #888;" onclick="filterByGender('', this)">Hammasi</button>
+                    <button class="gender-btn" style="font-size: 11px; padding: 6px 15px; border-radius: 20px; border: 1px solid var(--border); background: var(--muted); color: #888;" onclick="filterByGender('erkak', this)">Erkaklar</button>
+                    <button class="gender-btn" style="font-size: 11px; padding: 6px 15px; border-radius: 20px; border: 1px solid var(--border); background: var(--muted); color: #888;" onclick="filterByGender('ayol', this)">Ayollar</button>
+                    <button class="gender-btn" style="font-size: 11px; padding: 6px 15px; border-radius: 20px; border: 1px solid var(--border); background: var(--muted); color: #888;" onclick="filterByGender('uniseks', this)">Uniseks</button>
                 </div>
             </div>
 
@@ -268,7 +284,7 @@ const pages = {
     orders: `
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <div style="padding: 25px 20px 10px; display: flex; align-items: center; gap: 15px;">
-                <div onclick="navigate('profile')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--muted); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                <div onclick="goBack('profile')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--muted); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer;">
                     <i class="fa-solid fa-arrow-left" style="font-size: 16px; color: var(--accent) !important;"></i>
                 </div>
                 <h2 class="luxury-text gold-text" style="font-size: 2rem;">Buyurtmalarim</h2>
@@ -400,6 +416,11 @@ window.navigate = async function(page) {
     // Safety: if the page is empty, don't skip navigation
     if (window.__CURRENT_PAGE === page && pageContent.innerHTML.trim() !== "") return;
 
+    // Track History
+    if (window.__CURRENT_PAGE && window.__CURRENT_PAGE !== null && window.__NAV_MAP.includes(window.__CURRENT_PAGE)) {
+        window.__PREV_PAGE = window.__CURRENT_PAGE;
+    }
+
     // 0. Directional Logic
     const oldIdx = window.__NAV_MAP.indexOf(window.__CURRENT_PAGE);
     const newIdx = window.__NAV_MAP.indexOf(page);
@@ -446,7 +467,10 @@ window.navigate = async function(page) {
             console.error("Home render error:", e);
         }
     }
-    if (page === 'catalog') searchProducts('');
+    if (page === 'catalog') {
+        searchProducts('');
+        renderCategories();
+    }
     if (page === 'likes') renderLikes();
     if (page === 'cart') renderCart();
     if (page === 'orders') renderOrdersHistory();
@@ -1245,30 +1269,68 @@ function stopAutoSlide() {
 }
 
 window.handleSlideClick = function(slide) {
-    console.log("[SLIDE] Clicked:", slide.title);
     if (!slide.productIds || !slide.productIds.length) {
         navigate('catalog');
         return;
     }
-
-    // Filter products by IDs
-    const linkedProducts = allProducts.filter(p => slide.productIds.includes(p.id));
-    
-    // Navigate to catalog
+    const linkedProducts = allProducts.filter(p => slide.productIds.includes(p.id) || slide.productIds.includes(String(p.id)));
     navigate('catalog');
-    
-    // Override catalog grid with a small delay for re-render
     setTimeout(() => {
         const grid = document.getElementById('catalog-grid');
         if (grid) {
             grid.innerHTML = (linkedProducts.length > 0) 
                 ? linkedProducts.map(p => renderProductCard(p)).join('')
                 : `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">Ushbu kolleksiya uchun mahsulotlar topilmadi.</div>`;
-            
             const title = document.querySelector('#page-content h2');
             if (title) title.textContent = slide.title;
         }
-    }, 50);
+    }, 100);
+};
+
+window.renderCategories = function() {
+    const catContainer = document.getElementById('catalog-categories');
+    if (!catContainer) return;
+
+    fetch(`${API_BASE}/categories`)
+        .then(res => res.json())
+        .then(cats => {
+            let html = `<button class="category-btn active" onclick="searchProducts('', this)">Barchasi</button>`;
+            cats.forEach(c => {
+                html += `<button class="category-btn" onclick="searchProducts('${c}', this)">${c}</button>`;
+            });
+            catContainer.innerHTML = html;
+        });
+};
+
+window.filterByGender = function(gender, btn) {
+    const resultsContainer = document.getElementById('catalog-grid');
+    if (!resultsContainer) return;
+
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+
+    document.querySelectorAll('.gender-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'var(--muted)';
+        b.style.color = '#888';
+        b.style.borderColor = 'var(--border)';
+    });
+    
+    btn.classList.add('active');
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--accent)';
+
+    const filtered = allProducts.filter(p => {
+        if (!gender) return true;
+        const pGender = String(p.gender || 'Uniseks').toLowerCase();
+        return pGender === gender.toLowerCase();
+    });
+
+    if (filtered.length === 0) {
+        resultsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888; font-size: 14px;">Ushbu bo'limda mahsulotlar topilmadi.</div>`;
+    } else {
+        resultsContainer.innerHTML = filtered.map(p => renderProductCard(p)).join('');
+    }
 };
 
 window.searchProducts = function(query, btn = null) {
@@ -1286,11 +1348,18 @@ window.searchProducts = function(query, btn = null) {
     const filtered = allProducts.filter(p => {
         const cat = String(p.category || '').toLowerCase();
         const name = String(p.name || '').toLowerCase();
+        const gender = String(p.gender || 'Uniseks').toLowerCase(); // Default to Uniseks for old products
         const search = query.toLowerCase();
-        return name.includes(search) || cat.includes(search);
+        const searchNorm = search.replace('lar', ''); // Support "ayollar" -> "ayol" fuzzy match
+        
+        return name.includes(search) || cat.includes(search) || gender.includes(searchNorm);
     });
 
-    resultsContainer.innerHTML = filtered.map(p => renderProductCard(p)).join('');
+    if (filtered.length === 0) {
+        resultsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888; font-size: 14px;">Ushbu bo'limda mahsulotlar topilmadi.</div>`;
+    } else {
+        resultsContainer.innerHTML = filtered.map(p => renderProductCard(p)).join('');
+    }
 };
 
 window.playAudio = function(id) {
@@ -1345,12 +1414,15 @@ window.showProductDetail = function(id) {
     const displayPrice = isVip ? (p.vip_price || p.price) : p.price;
     const formattedPrice = Number(displayPrice).toLocaleString();
     const formattedOldPrice = Number(p.price).toLocaleString();
-    const productImg = p.image || p.img || '/shared-assets/assets/images/logo.png';
+    if (window.__CURRENT_PAGE && window.__NAV_MAP.includes(window.__CURRENT_PAGE)) {
+        window.__PREV_PAGE = window.__CURRENT_PAGE;
+    }
+    window.__CURRENT_PAGE = null; // Fix back navigation
 
     const detailPage = `
         <div class="animate-fluid" style="padding-bottom: 120px;">
             <div style="position: relative; height: 400px; overflow: hidden; border-radius: 0 0 40px 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
-                <div onclick="navigate('catalog')" style="position: absolute; top: 20px; left: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; color: var(--accent) !important; border: 1px solid rgba(255,255,255,0.2); z-index: 10; cursor: pointer;">
+                <div onclick="goBack('catalog')" style="position: absolute; top: 20px; left: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; color: var(--accent) !important; border: 1px solid rgba(255,255,255,0.2); z-index: 10; cursor: pointer;">
                     <i class="fa-solid fa-arrow-left" style="font-size: 18px;"></i>
                 </div>
                 <img src="${productImg}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -1395,6 +1467,7 @@ window.showProductDetail = function(id) {
         </div>
     `;
 
+    window.__CURRENT_PAGE = null; // Fix back navigation
     document.getElementById('page-content').innerHTML = detailPage;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
@@ -1651,11 +1724,17 @@ window.showDurHistory = function() {
     const customer = allCustomers.find(c => c.phone === userAuth || (c.tgId && c.tgId == userAuth));
     const history = (customer && customer.durHistory) ? customer.durHistory : [];
 
+    // Ensure we track where Dur Tarixi was opened from
+    if (window.__CURRENT_PAGE && window.__NAV_MAP.includes(window.__CURRENT_PAGE)) {
+        window.__PREV_PAGE = window.__CURRENT_PAGE;
+    }
+    window.__CURRENT_PAGE = null; // Fix back navigation
+    
     const pageContent = document.getElementById('page-content');
     pageContent.innerHTML = `
         <div class="animate-fluid" style="padding: 20px; padding-bottom: 120px;">
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 35px;">
-                <div onclick="navigate('home')" style="width: 42px; height: 42px; background: var(--muted); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                <div onclick="goBack('profile')" style="width: 42px; height: 42px; background: var(--muted); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                     <i class="fa-solid fa-arrow-left" style="font-size: 20px; color: var(--accent) !important;"></i>
                 </div>
                 <h2 class="luxury-text gold-text" style="font-size: 2rem; margin: 0;">Dur Tarixi</h2>
@@ -1719,6 +1798,11 @@ window.showNotifications = function() {
                 }
             };
 
+            if (window.__CURRENT_PAGE && window.__NAV_MAP.includes(window.__CURRENT_PAGE)) {
+                window.__PREV_PAGE = window.__CURRENT_PAGE;
+            }
+            window.__CURRENT_PAGE = null; // Fix back navigation
+            
             pageContent.innerHTML = `
                 <div class="animate-fluid" style="padding: 24px; padding-bottom: 120px; background: radial-gradient(circle at 50% 0%, rgba(161,98,7,0.05) 0%, transparent 70%); position: relative; min-height: 100vh;">
                     <!-- Minimalist Logo-inspired Background -->
@@ -1728,7 +1812,7 @@ window.showNotifications = function() {
                     <div style="position: relative; z-index: 1;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 35px;">
                             <div style="display: flex; align-items: center; gap: 20px;">
-                                <div onclick="navigate('home')" style="width: 44px; height: 44px; background: rgba(161,98,7,0.15); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <div onclick="goBack('home')" style="width: 44px; height: 44px; background: rgba(161,98,7,0.15); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                     <i class="fa-solid fa-arrow-left" style="font-size: 18px; color: var(--accent) !important;"></i>
                                 </div>
                                 <h2 class="luxury-text gold-text" style="font-size: 2.2rem; margin: 0;">Xabarlar</h2>

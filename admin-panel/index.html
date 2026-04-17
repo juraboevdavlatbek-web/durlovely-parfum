@@ -358,6 +358,14 @@
                     <select id="p-category"></select>
                 </div>
                 <div class="form-group">
+                    <label>Jinsi (Erkak/Ayol/Uniseks)</label>
+                    <select id="p-gender">
+                        <option value="Uniseks">Uniseks</option>
+                        <option value="Erkak">Erkak</option>
+                        <option value="Ayol">Ayol</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Stokda (dona)</label>
                     <input type="number" id="p-stock" required>
                 </div>
@@ -886,6 +894,7 @@
                 document.getElementById('p-price').value = p.price;
                 document.getElementById('p-vip-price').value = p.vip_price;
                 document.getElementById('p-category').value = p.category;
+                document.getElementById('p-gender').value = p.gender || 'Uniseks';
                 document.getElementById('p-stock').value = p.stock;
                 document.getElementById('p-image-url').value = p.image || '';
                 const layoutSelect = document.getElementById('p-layout');
@@ -1207,6 +1216,7 @@
                 price: parseInt(document.getElementById('p-price').value),
                 vip_price: parseInt(document.getElementById('p-vip-price').value),
                 category: document.getElementById('p-category').value,
+                gender: document.getElementById('p-gender').value,
                 stock: parseInt(document.getElementById('p-stock').value),
                 image: document.getElementById('p-image-url').value,
                 layout: document.getElementById('p-layout').value,

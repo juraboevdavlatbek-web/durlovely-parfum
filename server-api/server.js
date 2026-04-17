@@ -172,6 +172,8 @@ async function autoMigrate() {
 }
 
 const server = http.createServer(async (req, res) => {
+    const urlPath = req.url.split('?')[0];
+
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -747,6 +749,12 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // API: System
+    if (urlPath === '/api/version' && req.method === 'GET') {
+        res.end(JSON.stringify({ version: "3.0.2", platform: "antigravity-restored" }));
+        return;
+    }
+
     if (req.url.startsWith('/api/notifications') && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
@@ -762,39 +770,72 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API: Slides
-    if (req.url.startsWith('/api/slides') && req.method === 'GET') {
+    if (urlPath === '/api/slides' && req.method === 'GET') {
         const result = await dbRequest('find', 'slides');
         setJSON();
         res.end(JSON.stringify(result.documents || []));
         return;
     }
 
-    if (req.url.startsWith('/api/slides') && req.method === 'POST') {
+    if (urlPath === '/api/slides' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', async () => {
-            const slide = JSON.parse(body);
-            slide.id = Date.now();
-            await dbRequest('insertOne', 'slides', { document: slide });
-            setJSON();
-            res.end(JSON.stringify({ success: true, id: slide.id }));
+            try {
+                const slide = JSON.parse(body);
+                slide.id = Date.now();
+                await dbRequest('insertOne', 'slides', { document: slide });
+                setJSON();
+                res.end(JSON.stringify({ success: true, id: slide.id }));
+            } catch (e) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ error: "Invalid JSON" }));
+            }
         });
         return;
     }
 
-    if (req.url.startsWith('/api/slides/') && req.method === 'DELETE') {
-        const id = parseInt(req.url.split('/').pop());
-        await dbRequest('deleteOne', 'slides', { filter: { id } });
-        setJSON();
-        res.end(JSON.stringify({ success: true }));
+    if (urlPath.startsWith('/api/slides/') && req.method === 'DELETE') {
+        const idStr = urlPath.split('/').pop();
+        const id = parseInt(idStr);
+        if (!isNaN(id)) {
+            await dbRequest('deleteOne', 'slides', { filter: { id } });
+            setJSON();
+            res.end(JSON.stringify({ success: true }));
+        } else {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "Invalid Slide ID" }));
+        }
+        return;
+    }
+
+    if (urlPath.startsWith('/api/slides/') && req.method === 'PUT') {
+        const idStr = urlPath.split('/').pop();
+        const id = parseInt(idStr);
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const update = JSON.parse(body);
+                delete update.id; // Prevent updating the ID field itself
+                delete update._id;
+                await dbRequest('updateOne', 'slides', { filter: { id: id }, update: { $set: update } });
+                setJSON();
+                res.end(JSON.stringify({ success: true }));
+            } catch (e) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ error: "Invalid JSON" }));
+            }
+        });
         return;
     }
 
     // API: Categories
-    if (req.url.startsWith('/api/categories') && req.method === 'GET') {
-        // Enforce the canonical categories requested by the user
-        const canonicalCategories = ['Erkaklar', 'Ayollar', 'Uniseks'];
-        res.end(JSON.stringify(canonicalCategories));
+    if (urlPath === '/api/categories' && req.method === 'GET') {
+        const result = await dbRequest('find', 'products');
+        const products = result.documents || [];
+        const cats = [...new Set(products.map(p => p.category).filter(c => c))];
+        res.end(JSON.stringify(cats));
         return;
     }
 
